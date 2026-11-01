@@ -83,7 +83,7 @@ public class MeridianApiClient : IMeridianApiClient
     {
         using var client = CreateHttpClient();
 
-        var response = await client.GetAsync("/api/search-sessions?includeFindings=false", cancellationToken);
+        var response = await client.GetAsync("/api/search-sessions?includeFindings=true", cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var list = await response.Content.ReadFromJsonAsync<List<SearchSessionModel>>(_jsonOptions, cancellationToken);

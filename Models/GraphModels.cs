@@ -15,6 +15,9 @@ public enum GraphNodeType
     Registrar,
     Contact,
     Technology,
+    Profile,
+    EmailVerified,
+    Warning,
     Other
 }
 
@@ -42,6 +45,15 @@ public partial class GraphNode : ObservableObject
     [ObservableProperty]
     private bool _isPinned;
 
+    [ObservableProperty]
+    private bool _isExpanding;
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    [ObservableProperty]
+    private int _expansionDepth;
+
     // Physics state
     public double Vx { get; set; }
     public double Vy { get; set; }
@@ -51,11 +63,15 @@ public partial class GraphNode : ObservableObject
     {
         GraphNodeType.Target => 28,
         GraphNodeType.Subdomain => 20,
+        GraphNodeType.Profile => 21,
+        GraphNodeType.EmailVerified => 19,
+        GraphNodeType.Warning => 19,
         GraphNodeType.IpAddress => 18,
         GraphNodeType.NameServer => 17,
-        GraphNodeType.MailServer => 17,
+        GraphNodeType.MailServer => 18,
         GraphNodeType.Technology => 16,
         GraphNodeType.Registrar => 16,
+        GraphNodeType.Contact => 18,
         _ => 15
     };
 
@@ -65,10 +81,13 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Subdomain => "Globe24",
         GraphNodeType.IpAddress => "Server24",
         GraphNodeType.NameServer => "Router24",
-        GraphNodeType.MailServer => "MailRead24",
+        GraphNodeType.MailServer => "Mail24",
         GraphNodeType.Technology => "Code24",
         GraphNodeType.Registrar => "Shield24",
         GraphNodeType.Contact => "PersonCircle24",
+        GraphNodeType.Profile => "PersonCircle24",
+        GraphNodeType.EmailVerified => "ShieldCheckmark24",
+        GraphNodeType.Warning => "ShieldError24",
         _ => "DocumentBulletList24"
     };
 
@@ -82,8 +101,29 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Technology => "Технология",
         GraphNodeType.Registrar => "Регистратор",
         GraphNodeType.Contact => "Контакт / Email",
+        GraphNodeType.Profile => "OSINT Профиль",
+        GraphNodeType.EmailVerified => "Легитимная почта",
+        GraphNodeType.Warning => "Одноразовая почта",
         _ => "Находка"
     };
+
+    public string TypeName => Services.LocalizationService.Instance.CurrentLanguage == "en"
+        ? Type switch
+        {
+            GraphNodeType.Target => "Target",
+            GraphNodeType.Subdomain => "Subdomain",
+            GraphNodeType.IpAddress => "IP Address",
+            GraphNodeType.NameServer => "DNS Nameserver",
+            GraphNodeType.MailServer => "Mail Server",
+            GraphNodeType.Technology => "Web Technology",
+            GraphNodeType.Registrar => "Registrar",
+            GraphNodeType.Contact => "Contact / Email",
+            GraphNodeType.Profile => "OSINT Profile",
+            GraphNodeType.EmailVerified => "Legitimate Email",
+            GraphNodeType.Warning => "Burner / Disposable Mail",
+            _ => "Finding"
+        }
+        : TypeNameRu;
 
     public Color AccentColor => Type switch
     {
@@ -95,6 +135,9 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Technology => Color.FromRgb(20, 184, 166),  // Teal #14B8A6
         GraphNodeType.Registrar => Color.FromRgb(236, 72, 153),   // Pink #EC4899
         GraphNodeType.Contact => Color.FromRgb(234, 179, 8),      // Yellow #EAB308
+        GraphNodeType.Profile => Color.FromRgb(137, 87, 229),     // Purple / GitHub #8957E5
+        GraphNodeType.EmailVerified => Color.FromRgb(0, 229, 153),// Neon Green #00E599
+        GraphNodeType.Warning => Color.FromRgb(255, 51, 102),     // Crimson #FF3366
         _ => Color.FromRgb(148, 163, 184)                         // Slate #94A3B8
     };
 

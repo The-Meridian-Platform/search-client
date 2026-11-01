@@ -18,6 +18,7 @@ public partial class SearchViewModel : ObservableObject
     private readonly IMeridianApiClient _apiClient;
     private readonly IMeridianStreamClient _streamClient;
     private readonly ILogService _logService;
+    private readonly IToastService _toastService;
     private readonly object _findingsLock = new();
 
     private CancellationTokenSource? _searchCts;
@@ -74,7 +75,10 @@ public partial class SearchViewModel : ObservableObject
     private int _httpTechFindingsCount;
 
     [ObservableProperty]
-    private string _activeFilter = "All"; // All, DNS, Whois, Subdomains, Tech, Other
+    private int _emailFindingsCount;
+
+    [ObservableProperty]
+    private string _activeFilter = "All"; // All, Email, DNS, Whois, Subdomains, Tech, Other
 
     [ObservableProperty]
     private bool _isFiltersPanelOpen;
@@ -98,11 +102,16 @@ public partial class SearchViewModel : ObservableObject
         }
     }
 
-    public SearchViewModel(IMeridianApiClient apiClient, IMeridianStreamClient streamClient, ILogService logService)
+    public SearchViewModel(
+        IMeridianApiClient apiClient,
+        IMeridianStreamClient streamClient,
+        ILogService logService,
+        IToastService? toastService = null)
     {
         _apiClient = apiClient;
         _streamClient = streamClient;
         _logService = logService;
+        _toastService = toastService ?? new ToastService(new SettingsService());
 
         BindingOperations.EnableCollectionSynchronization(Findings, _findingsLock);
 
@@ -115,6 +124,18 @@ public partial class SearchViewModel : ObservableObject
             var ts = _stopwatch.Elapsed;
             ElapsedTime = $"{ts.Minutes:D2}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
         };
+
+        LocalizationService.Instance.LanguageChanged += () =>
+        {
+            if (!IsRunning && SessionStatus == "Completed")
+            {
+                StatusMessage = string.Format(LocalizationService.Instance.GetString("Search_Status_Completed"), TotalFindingsCount);
+            }
+            else if (!IsRunning && (SessionStatus == "Pending" || string.IsNullOrWhiteSpace(SessionStatus)))
+            {
+                StatusMessage = LocalizationService.Instance.GetString("Search_Status_EnterTarget");
+            }
+        };
     }
 
     [RelayCommand]
@@ -122,7 +143,7 @@ public partial class SearchViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(TargetInput))
         {
-            StatusMessage = "Введите целевой домен или IP";
+            StatusMessage = LocalizationService.Instance.GetString("Search_Status_EnterTarget");
             return;
         }
 
@@ -144,11 +165,12 @@ public partial class SearchViewModel : ObservableObject
         WhoisFindingsCount = 0;
         SubdomainFindingsCount = 0;
         HttpTechFindingsCount = 0;
+        EmailFindingsCount = 0;
         ElapsedTime = "00:00.000";
 
         SessionStatus = "Pending";
         IsRunning = true;
-        StatusMessage = "Инициализация сессии через REST API...";
+        StatusMessage = LocalizationService.Instance.GetString("Search_Status_Initializing");
         _stopwatch.Restart();
         _timer.Start();
 
@@ -159,8 +181,10 @@ public partial class SearchViewModel : ObservableObject
             // 1. Create Session via POST /api/search-sessions
             var sessionResponse = await _apiClient.CreateSessionAsync(TargetInput.Trim(), SelectedTargetType, ct);
             CurrentSessionId = sessionResponse.EffectiveId;
-            StatusMessage = $"Сессия создана [{CurrentSessionId}]. Подключение к gRPC стриму...";
+            StatusMessage = string.Format(LocalizationService.Instance.GetString("Search_Status_Connecting"), CurrentSessionId);
             _logService.LogInfo("Search", $"Сессия [{CurrentSessionId}] создана. Подключение к gRPC...");
+
+            _toastService.ShowInfo("Поиск запущен", $"Поиск для цели «{ActiveTarget}» активирован.");
 
             // 2. Open gRPC Stream and receive real-time updates
             var stream = _streamClient.SubscribeToSessionAsync(CurrentSessionId, ct);
@@ -175,6 +199,7 @@ public partial class SearchViewModel : ObservableObject
                 SessionStatus = "Completed";
                 StatusMessage = $"Поиск завершен. Найдено записей: {TotalFindingsCount}";
                 _logService.LogInfo("Search", $"Поиск успешно завершен. Всего находок: {TotalFindingsCount} (DNS: {DnsFindingsCount}, WHOIS: {WhoisFindingsCount}) за {ElapsedTime}");
+                _toastService.ShowSuccess("Поиск завершен", $"Цель «{ActiveTarget}»: обнаружено {TotalFindingsCount} результатов.");
             }
         }
         catch (OperationCanceledException)
@@ -188,12 +213,14 @@ public partial class SearchViewModel : ObservableObject
             SessionStatus = "Failed";
             StatusMessage = $"Ошибка gRPC [{ex.StatusCode}]: {ex.Status.Detail}";
             _logService.LogError("Search", $"Сбой gRPC [{ex.StatusCode}]: {ex.Status.Detail}", ex);
+            _toastService.ShowError("Ошибка поиска", $"Сбой gRPC: {ex.Status.Detail}");
         }
         catch (Exception ex)
         {
             SessionStatus = "Failed";
             StatusMessage = $"Ошибка: {ex.Message}";
             _logService.LogError("Search", $"Сбой поиска: {ex.Message}", ex);
+            _toastService.ShowError("Ошибка поиска", ex.Message);
         }
         finally
         {
@@ -215,7 +242,8 @@ public partial class SearchViewModel : ObservableObject
         if (SessionStatus == "Running" || SessionStatus == "Pending")
         {
             SessionStatus = "Cancelled";
-            StatusMessage = "Поиск остановлен";
+            StatusMessage = LocalizationService.Instance.GetString("Search_Status_Stopped");
+            _toastService.ShowWarning("Поиск остановлен", "Стрим данных остановлен пользователем.");
         }
     }
 
@@ -265,6 +293,7 @@ public partial class SearchViewModel : ObservableObject
         WhoisFindingsCount = 0;
         SubdomainFindingsCount = 0;
         HttpTechFindingsCount = 0;
+        EmailFindingsCount = 0;
         ElapsedTime = "00:00.000";
         SessionStatus = "Ready";
         StatusMessage = "Готов к запуску поиска";
@@ -274,6 +303,7 @@ public partial class SearchViewModel : ObservableObject
         await EraseInputFieldsAnimatedAsync();
 
         SafeRefreshFindingsView();
+        _toastService.ShowInfo("Лента очищена", "Список находок сброшен.");
     }
 
     private async Task EraseInputFieldsAnimatedAsync()
@@ -344,6 +374,8 @@ public partial class SearchViewModel : ObservableObject
         // 1. Category filter
         if (ActiveFilter != "All")
         {
+            if (string.Equals(ActiveFilter, "Email", StringComparison.OrdinalIgnoreCase) && !finding.IsEmailFinding)
+                return false;
             if (string.Equals(ActiveFilter, "DNS", StringComparison.OrdinalIgnoreCase) && !finding.IsDns)
                 return false;
             if (string.Equals(ActiveFilter, "Whois", StringComparison.OrdinalIgnoreCase) && !finding.IsWhois)
@@ -353,7 +385,7 @@ public partial class SearchViewModel : ObservableObject
             if (string.Equals(ActiveFilter, "Tech", StringComparison.OrdinalIgnoreCase) && !finding.IsHttpTech)
                 return false;
             if (string.Equals(ActiveFilter, "Other", StringComparison.OrdinalIgnoreCase) &&
-                (finding.IsDns || finding.IsWhois || finding.IsSubdomain || finding.IsHttpTech))
+                (finding.IsEmailFinding || finding.IsDns || finding.IsWhois || finding.IsSubdomain || finding.IsHttpTech))
                 return false;
         }
 
@@ -365,6 +397,20 @@ public partial class SearchViewModel : ObservableObject
         if (finding.Type.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
         if (finding.ProviderKey.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
         if (finding.RawJson.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Email OSINT checks
+        if (finding.GitHubEmailData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.GitHubEmailData?.AccountType.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.GravatarEmailData?.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.GravatarEmailData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.GravatarEmailData?.Location.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.GravatarEmailData?.AboutMe.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.DisposableEmailData?.Email.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.DisposableEmailData?.Domain.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.DisposableEmailData?.Category.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.MxEmailData?.EmailDomain.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.MxEmailData?.MailProviderName.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.MxEmailData?.MxServers.Any(s => s.Contains(query, StringComparison.OrdinalIgnoreCase)) == true) return true;
 
         // DNS checks
         if (finding.DnsData?.Value.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
@@ -394,7 +440,7 @@ public partial class SearchViewModel : ObservableObject
             case SearchStreamResponse.PayloadOneofCase.SessionStarted:
                 var started = response.SessionStarted;
                 SessionStatus = "Running";
-                StatusMessage = $"Поиск запущен для цели: {started.TargetValue}";
+                StatusMessage = string.Format(LocalizationService.Instance.GetString("Search_Status_Launched"), started.TargetValue);
                 break;
 
             case SearchStreamResponse.PayloadOneofCase.FindingDiscovered:
@@ -423,7 +469,8 @@ public partial class SearchViewModel : ObservableObject
                         Findings.Add(vm);
                     }
                     TotalFindingsCount++;
-                    if (vm.IsDns) DnsFindingsCount++;
+                    if (vm.IsEmailFinding) EmailFindingsCount++;
+                    else if (vm.IsDns) DnsFindingsCount++;
                     else if (vm.IsWhois) WhoisFindingsCount++;
                     else if (vm.IsSubdomain) SubdomainFindingsCount++;
                     else if (vm.IsHttpTech) HttpTechFindingsCount++;
@@ -433,7 +480,7 @@ public partial class SearchViewModel : ObservableObject
             case SearchStreamResponse.PayloadOneofCase.SessionFinished:
                 var finished = response.SessionFinished;
                 SessionStatus = string.IsNullOrWhiteSpace(finished.Status) ? "Completed" : finished.Status;
-                StatusMessage = $"Сессия завершена. Всего находок: {finished.TotalFindings}";
+                StatusMessage = string.Format(LocalizationService.Instance.GetString("Search_Status_Completed"), finished.TotalFindings);
                 IsRunning = false;
                 _stopwatch.Stop();
                 _timer.Stop();

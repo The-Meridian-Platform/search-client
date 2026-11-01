@@ -43,6 +43,7 @@ public class LocalizationService : ILocalizationService
         ["Search_ClearButton"] = "Очистить",
         ["Search_ReadyStatus"] = "Готов к запуску поиска",
         ["Search_FilterAll"] = "Все находки",
+        ["Search_FilterEmail"] = "Email / Профили",
         ["Search_FilterDNS"] = "DNS записи",
         ["Search_FilterWhois"] = "WHOIS данные",
         ["Search_FilterSubdomains"] = "Поддомены",
@@ -71,6 +72,52 @@ public class LocalizationService : ILocalizationService
         ["Search_Metric_WHOIS"] = "WHOIS:",
         ["Search_Metric_Subdomains"] = "ПОДДОМЕНЫ:",
         ["Search_Metric_Tech"] = "ВЕБ-СТЕК:",
+        ["Search_Metric_Email"] = "EMAIL ДАННЫЕ:",
+
+        ["Search_Status_EnterTarget"] = "Введите целевой домен или IP",
+        ["Search_Status_Initializing"] = "Инициализация сессии через REST API...",
+        ["Search_Status_Connecting"] = "Сессия создана [{0}]. Подключение к gRPC стриму...",
+        ["Search_Status_Launched"] = "Поиск запущен для цели: {0}",
+        ["Search_Status_Completed"] = "Сессия завершена. Всего находок: {0}",
+        ["Search_Status_Stopped"] = "Поиск остановлен пользователем.",
+
+        ["Search_Card_Disposable_BurnerTitle"] = "ВРЕМЕННАЯ ОДНОРАЗОВАЯ ПОЧТА (BURNER)",
+        ["Search_Card_Disposable_LegitTitle"] = "ЛЕГИТИМНЫЙ ПОЧТОВЫЙ ДОМЕН",
+        ["Search_Card_Disposable_BurnerMsg"] = "Внимание: почтовый ящик или домен зарегистрирован в базе сервисов временной почты. Высокий риск фейка, мошенничества или спам-активности.",
+        ["Search_Card_Disposable_LegitMsg"] = "Признаков временного или одноразового ящика не обнаружено. Стандартный почтовый провайдер.",
+        ["Search_Card_Disposable_Domain"] = "ДОМЕН ПОЧТЫ",
+        ["Search_Card_Disposable_Category"] = "КАТЕГОРИЯ",
+        ["Search_Card_Disposable_TargetEmail"] = "ЦЕЛЕВОЙ EMAIL",
+
+        ["Search_Card_Mx_Domain"] = "ПОЧТОВЫЙ ДОМЕН:",
+        ["Search_Card_Mx_Gateways"] = "ПОЧТОВЫЕ ШЛЮЗЫ (MX SERVERS):",
+        ["Search_Card_Mx_SpfActive"] = "SPF ЗАЩИТА АКТИВНА",
+        ["Search_Card_Mx_SpfMissing"] = "НЕТ SPF ЗАЩИТЫ",
+
+        ["Search_Card_Profile_Url"] = "ПРОФИЛЬ:",
+        ["Search_Card_Profile_Btn"] = "Профиль",
+        ["Avatar_Dialog_Title_GitHub"] = "Профиль GitHub",
+        ["Avatar_Dialog_Title_Gravatar"] = "Профиль Gravatar",
+        ["Avatar_Dialog_OpenProfile"] = "Открыть профиль",
+        ["Avatar_Dialog_Close"] = "Закрыть",
+
+        // Graph View Toasts & Alerts
+        ["Graph_Toast_PivotErrorTitle"] = "Ошибка Pivot-исследования",
+        ["Graph_Toast_InvalidTarget"] = "Неверное значение для поиска: «{0}». Узел не содержит корректного домена, IP-адреса или имени пользователя.",
+        ["Graph_Toast_BadRequest"] = "Сервер отклонил цель «{0}»: неверный формат значения (400 Bad Request).",
+        ["Graph_Toast_GenericError"] = "Ошибка при запуске исследования «{0}»: {1}",
+        ["Graph_AutoExpand_Off"] = "Авто: ВЫКЛ",
+        ["Graph_AutoExpand_On"] = "Авто: Smart",
+        ["Graph_Btn_ExpandNode"] = "⚡ Развернуть узел (Pivot)",
+        ["Graph_Btn_NodeExpanded"] = "✔ Узел уже развёрнут",
+        ["Graph_Btn_NodeExpanding"] = "⏳ Разворачивание...",
+        ["Graph_Toast_AlreadyVisited"] = "Цель «{0}» уже была исследована. Связи объединены на графе.",
+        ["Graph_Toast_LimitTitle"] = "Лимит холста",
+        ["Graph_Toast_LimitReached"] = "Достигнут лимит узлов на холсте (150). Развёртывание остановлено для предотвращения перегрузки графа.",
+        ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand запущен для {0} ключевых находок (1 уровень глубины).",
+        ["Graph_Btn_SmartLayout_ToolTip"] = "Организовать и зафиксировать (умная раскладка + стоп-физика)",
+        ["Graph_Toast_SmartLayoutTitle"] = "Раскладка зафиксирована",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Граф организован по орбитам без пересечений. Физика связей остановлена.",
 
         // History View
         ["History_Title"] = "История поисковых сессий",
@@ -116,6 +163,9 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language_Label"] = "ЯЗЫК ИНТЕРФЕЙСА:",
         ["Settings_Language_Ru"] = "Русский (RU)",
         ["Settings_Language_En"] = "English (EN)",
+        ["Settings_Notifications_Label"] = "ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ:",
+        ["Settings_Notifications_Title"] = "Всплывающие Toast-уведомления",
+        ["Settings_Notifications_Subtitle"] = "Отображать всплывающие уведомления о системных событиях, поиске и графе в нижнем правом углу",
         ["Settings_DiagHeader"] = "ДИАГНОСТИКА СОЕДИНЕНИЯ:"
     };
 
@@ -143,6 +193,7 @@ public class LocalizationService : ILocalizationService
         ["Search_ClearButton"] = "Clear Feed",
         ["Search_ReadyStatus"] = "Ready to launch search",
         ["Search_FilterAll"] = "All findings",
+        ["Search_FilterEmail"] = "Email / Profiles",
         ["Search_FilterDNS"] = "DNS records",
         ["Search_FilterWhois"] = "WHOIS data",
         ["Search_FilterSubdomains"] = "Subdomains",
@@ -171,6 +222,52 @@ public class LocalizationService : ILocalizationService
         ["Search_Metric_WHOIS"] = "WHOIS:",
         ["Search_Metric_Subdomains"] = "SUBDOMAINS:",
         ["Search_Metric_Tech"] = "WEB TECH:",
+        ["Search_Metric_Email"] = "EMAIL OSINT:",
+
+        ["Search_Status_EnterTarget"] = "Please enter target domain or IP",
+        ["Search_Status_Initializing"] = "Initializing session via REST API...",
+        ["Search_Status_Connecting"] = "Session created [{0}]. Connecting to gRPC stream...",
+        ["Search_Status_Launched"] = "Search launched for target: {0}",
+        ["Search_Status_Completed"] = "Session completed. Total findings: {0}",
+        ["Search_Status_Stopped"] = "Search stopped by user.",
+
+        ["Search_Card_Disposable_BurnerTitle"] = "TEMPORARY DISPOSABLE MAIL (BURNER)",
+        ["Search_Card_Disposable_LegitTitle"] = "LEGITIMATE MAIL DOMAIN",
+        ["Search_Card_Disposable_BurnerMsg"] = "Warning: Mailbox or domain is registered with disposable email services. High risk of burner, fraudulent or spam activity.",
+        ["Search_Card_Disposable_LegitMsg"] = "No temporary or burner mailbox detected. Standard email provider.",
+        ["Search_Card_Disposable_Domain"] = "MAIL DOMAIN",
+        ["Search_Card_Disposable_Category"] = "CATEGORY",
+        ["Search_Card_Disposable_TargetEmail"] = "TARGET EMAIL",
+
+        ["Search_Card_Mx_Domain"] = "EMAIL DOMAIN:",
+        ["Search_Card_Mx_Gateways"] = "MAIL EXCHANGERS (MX SERVERS):",
+        ["Search_Card_Mx_SpfActive"] = "SPF PROTECTED",
+        ["Search_Card_Mx_SpfMissing"] = "NO SPF PROTECTION",
+
+        ["Search_Card_Profile_Url"] = "PROFILE:",
+        ["Search_Card_Profile_Btn"] = "Profile",
+        ["Avatar_Dialog_Title_GitHub"] = "GitHub Profile",
+        ["Avatar_Dialog_Title_Gravatar"] = "Gravatar Profile",
+        ["Avatar_Dialog_OpenProfile"] = "Open Profile",
+        ["Avatar_Dialog_Close"] = "Close",
+
+        // Graph View Toasts & Alerts
+        ["Graph_Toast_PivotErrorTitle"] = "Pivot Investigation Error",
+        ["Graph_Toast_InvalidTarget"] = "Invalid search target: '{0}'. Node does not contain a valid domain, IP address, or username.",
+        ["Graph_Toast_BadRequest"] = "The server rejected target '{0}': invalid value format (400 Bad Request).",
+        ["Graph_Toast_GenericError"] = "Error starting investigation for '{0}': {1}",
+        ["Graph_AutoExpand_Off"] = "Auto: OFF",
+        ["Graph_AutoExpand_On"] = "Auto: Smart",
+        ["Graph_Btn_ExpandNode"] = "⚡ Expand Node (Pivot)",
+        ["Graph_Btn_NodeExpanded"] = "✔ Node Already Expanded",
+        ["Graph_Btn_NodeExpanding"] = "⏳ Expanding...",
+        ["Graph_Toast_AlreadyVisited"] = "Target '{0}' has already been investigated. Connections merged on graph.",
+        ["Graph_Toast_LimitTitle"] = "Canvas Limit",
+        ["Graph_Toast_LimitReached"] = "Graph canvas limit reached (150 nodes). Expansion halted to prevent graph explosion.",
+        ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand launched for {0} priority findings (Depth 1).",
+        ["Graph_Btn_SmartLayout_ToolTip"] = "Organize and Lock (smart layout + stop physics)",
+        ["Graph_Toast_SmartLayoutTitle"] = "Layout Locked",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Graph organized into non-overlapping orbits. Physics simulation stopped.",
 
         // History View
         ["History_Title"] = "Reconnaissance Session History",
@@ -216,6 +313,9 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language_Label"] = "LANGUAGE:",
         ["Settings_Language_Ru"] = "Русский (RU)",
         ["Settings_Language_En"] = "English (EN)",
+        ["Settings_Notifications_Label"] = "POPUP NOTIFICATIONS:",
+        ["Settings_Notifications_Title"] = "Popup Toast Notifications",
+        ["Settings_Notifications_Subtitle"] = "Display popup notifications for system events, reconnaissance and graph in bottom-right corner",
         ["Settings_DiagHeader"] = "CONNECTION DIAGNOSTICS:"
     };
 

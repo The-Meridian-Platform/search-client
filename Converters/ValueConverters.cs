@@ -99,6 +99,10 @@ public class FindingTypeToBrushConverter : IValueConverter
     private static readonly SolidColorBrush TxtBrush = new(Color.FromRgb(0, 229, 153));    // #00E599 Cyber Emerald
     private static readonly SolidColorBrush NsBrush = new(Color.FromRgb(0, 240, 255));     // #00F0FF Neon Aqua
     private static readonly SolidColorBrush WhoisBrush = new(Color.FromRgb(255, 0, 127));  // #FF007F Cyber Magenta
+    private static readonly SolidColorBrush GitHubBrush = new(Color.FromRgb(137, 87, 229));// #8957E5 GitHub Purple
+    private static readonly SolidColorBrush GravatarBrush = new(Color.FromRgb(0, 210, 255));// #00D2FF Cyan
+    private static readonly SolidColorBrush BurnerBrush = new(Color.FromRgb(255, 51, 102)); // #FF3366 Crimson
+    private static readonly SolidColorBrush MailServerBrush = new(Color.FromRgb(255, 122, 0));// #FF7A00 Orange
     private static readonly SolidColorBrush DefaultBrush = new(Color.FromRgb(59, 130, 246));// #3B82F6 Sapphire
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -113,6 +117,11 @@ public class FindingTypeToBrushConverter : IValueConverter
             "TXT" => TxtBrush,
             "NS" => NsBrush,
             "WHOIS" => WhoisBrush,
+            "GITHUB" or "GITHUB-EMAIL_RECORD" => GitHubBrush,
+            "GRAVATAR" or "GRAVATAR-EMAIL_RECORD" => GravatarBrush,
+            "BURNER / DISPOSABLE" or "DISPOSABLE-EMAIL_RECORD" or "DISPOSABLE" => BurnerBrush,
+            "LEGITIMATE MAIL" => TxtBrush,
+            "MAIL SERVER" or "MX-EMAIL_RECORD" => MailServerBrush,
             _ => DefaultBrush
         };
     }

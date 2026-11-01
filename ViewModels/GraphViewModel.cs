@@ -23,10 +23,29 @@ public partial class GraphViewModel : ObservableObject
     private readonly IMeridianStreamClient _streamClient;
     private readonly IInvestigationService _investigationService;
     private readonly ILogService _logService;
+    private readonly IToastService _toastService;
     private readonly GraphSimulationEngine _physics = new();
     private readonly Random _random = new();
 
     private readonly Dictionary<string, GraphNode> _nodeMap = new();
+    private readonly HashSet<string> _visitedTargets = new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxCanvasNodes = 150;
+
+    private static readonly HashSet<string> SupernodeBlacklist = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "google.com", "gmail.com", "googlemail.com",
+        "yandex.ru", "yandex.com", "yandex.net", "ya.ru",
+        "outlook.com", "hotmail.com", "live.com", "msn.com", "microsoft.com",
+        "protonmail.com", "proton.me",
+        "mail.ru", "inbox.ru", "bk.ru", "list.ru",
+        "yahoo.com", "icloud.com", "me.com", "mac.com",
+        "rambler.ru", "zoho.com", "gmx.com", "gmx.net", "aol.com",
+        "tutanota.com", "tuta.io", "fastmail.com",
+        "cloudflare.com", "one.one.one.one", "dns.google", "quad9.net", "opendns.com",
+        "loopia.se", "godaddy.com", "namecheap.com", "reg.ru", "nic.ru",
+        "awsdns", "digitalocean.com"
+    };
+
     private readonly DispatcherTimer _physicsTimer;
     private CancellationTokenSource? _pivotCts;
 
@@ -80,16 +99,49 @@ public partial class GraphViewModel : ObservableObject
     [ObservableProperty]
     private int _pivotFindingsCount;
 
+    [ObservableProperty]
+    private bool _isAutoExpandEnabled;
+
+    public string AutoExpandButtonText => IsAutoExpandEnabled
+        ? LocalizationService.Instance.GetString("Graph_AutoExpand_On")
+        : LocalizationService.Instance.GetString("Graph_AutoExpand_Off");
+
+    partial void OnIsAutoExpandEnabledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AutoExpandButtonText));
+    }
+
+    [RelayCommand]
+    public void ToggleAutoExpand()
+    {
+        IsAutoExpandEnabled = !IsAutoExpandEnabled;
+    }
+
+    [ObservableProperty]
+    private bool _hasErrorMessage;
+
+    [ObservableProperty]
+    private bool _isToastSuccess;
+
+    public string SmartLayoutToolTip => LocalizationService.Instance.GetString("Graph_Btn_SmartLayout_ToolTip");
+
     public ObservableCollection<SearchSessionModel> AvailableSessions => _historyViewModel.Sessions;
 
+    private string? _lastSelectedSessionId;
     private SearchSessionModel? _selectedSession;
     public SearchSessionModel? SelectedSession
     {
         get => _selectedSession;
         set
         {
+            if (value != null)
+            {
+                _lastSelectedSessionId = value.EffectiveId;
+            }
             if (SetProperty(ref _selectedSession, value) && value != null)
             {
+                _selectedInvestigation = null;
+                OnPropertyChanged(nameof(SelectedInvestigation));
                 _ = LoadSessionByIdAsync(value.EffectiveId, value.EffectiveTarget);
             }
         }
@@ -103,6 +155,8 @@ public partial class GraphViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedInvestigation, value) && value != null)
             {
+                _selectedSession = null;
+                OnPropertyChanged(nameof(SelectedSession));
                 _ = LoadInvestigationAsync(value);
             }
         }
@@ -116,7 +170,8 @@ public partial class GraphViewModel : ObservableObject
         IMeridianApiClient apiClient,
         IMeridianStreamClient streamClient,
         IInvestigationService investigationService,
-        ILogService logService)
+        ILogService logService,
+        IToastService? toastService = null)
     {
         _searchViewModel = searchViewModel;
         _historyViewModel = historyViewModel;
@@ -124,9 +179,26 @@ public partial class GraphViewModel : ObservableObject
         _streamClient = streamClient;
         _investigationService = investigationService;
         _logService = logService;
+        _toastService = toastService ?? new ToastService(new SettingsService());
+
+        Nodes.CollectionChanged += (s, e) => NodesCount = Nodes.Count;
+        Edges.CollectionChanged += (s, e) => EdgesCount = Edges.Count;
 
         _investigationService.InvestigationsChanged += ReloadAvailableInvestigations;
         ReloadAvailableInvestigations();
+
+        _historyViewModel.Sessions.CollectionChanged += (_, _) =>
+        {
+            if (_selectedSession == null && !string.IsNullOrEmpty(_lastSelectedSessionId) && !IsLiveMode && !IsInvestigationMode)
+            {
+                var restored = _historyViewModel.Sessions.FirstOrDefault(s => s.EffectiveId == _lastSelectedSessionId);
+                if (restored != null)
+                {
+                    _selectedSession = restored;
+                    OnPropertyChanged(nameof(SelectedSession));
+                }
+            }
+        };
 
         // Physics step timer (smooth 60 FPS)
         _physicsTimer = new DispatcherTimer(DispatcherPriority.Render)
@@ -138,9 +210,26 @@ public partial class GraphViewModel : ObservableObject
 
         // Subscribe to live search findings
         ((INotifyCollectionChanged)_searchViewModel.Findings).CollectionChanged += OnLiveFindingsChanged;
+        _searchViewModel.PropertyChanged += OnSearchViewModelPropertyChanged;
+        LocalizationService.Instance.LanguageChanged += () =>
+        {
+            OnPropertyChanged(nameof(AutoExpandButtonText));
+            OnPropertyChanged(nameof(SmartLayoutToolTip));
+        };
 
         // Initialize with initial live data
         SyncFromLiveSearch();
+    }
+
+    private void OnSearchViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SearchViewModel.IsRunning) && !_searchViewModel.IsRunning && _searchViewModel.SessionStatus == "Completed")
+        {
+            if (IsAutoExpandEnabled && IsLiveMode)
+            {
+                _ = Application.Current?.Dispatcher.InvokeAsync(RunSmartAutoExpandAsync);
+            }
+        }
     }
 
     private void OnLiveFindingsChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -222,6 +311,11 @@ public partial class GraphViewModel : ObservableObject
             {
                 AddFindingToGraph(finding, TargetDisplay);
             }
+
+            if (snapshot.Count > 0)
+            {
+                EnsureCurrentInvestigationExists();
+            }
         }
 
         _physics.WakeUp();
@@ -233,10 +327,17 @@ public partial class GraphViewModel : ObservableObject
     {
         IsLoadingSession = true;
         IsLiveMode = false;
+        IsInvestigationMode = false;
+        CurrentInvestigation = null;
 
         try
         {
             var detail = await _apiClient.GetSessionDetailsAsync(sessionId);
+            if (detail == null && AvailableSessions.FirstOrDefault(s => s.EffectiveId == sessionId) is { } cachedSession)
+            {
+                detail = cachedSession;
+            }
+
             if (detail != null)
             {
                 ClearGraph();
@@ -275,6 +376,11 @@ public partial class GraphViewModel : ObservableObject
 
     private void AddFindingToGraph(FindingItemViewModel finding, string target)
     {
+        if (!string.IsNullOrWhiteSpace(target) && target != "—")
+        {
+            _visitedTargets.Add(SanitizeTarget(target));
+        }
+
         var newEdges = new List<GraphEdge>();
         GraphDataMapper.MapFindingToGraph(finding, target, _nodeMap, newEdges, _random, 400, 300);
 
@@ -300,6 +406,7 @@ public partial class GraphViewModel : ObservableObject
         _nodeMap.Clear();
         Nodes.Clear();
         Edges.Clear();
+        _visitedTargets.Clear();
         SelectedNode = null;
         HasSelectedNode = false;
         UpdateCounts();
@@ -380,6 +487,229 @@ public partial class GraphViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void OrganizeAndFreezeLayout()
+    {
+        if (Nodes.Count == 0) return;
+
+        IsPhysicsRunning = false;
+
+        foreach (var node in Nodes)
+        {
+            node.Vx = 0;
+            node.Vy = 0;
+        }
+
+        var targetNodes = Nodes
+            .Where(n => n.Type == GraphNodeType.Target)
+            .OrderBy(n => n.ExpansionDepth)
+            .ThenByDescending(n => n.Label.Equals(TargetDisplay, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var hubs = targetNodes.Count > 0
+            ? targetNodes
+            : Nodes.OrderByDescending(n => Edges.Count(e => e.Source == n || e.Target == n)).Take(1).ToList();
+
+        if (hubs.Count == 0) hubs.Add(Nodes[0]);
+
+        double avgX = Nodes.Average(n => n.X);
+        double avgY = Nodes.Average(n => n.Y);
+        if (avgX < 200 || avgY < 200)
+        {
+            avgX = 2500;
+            avgY = 2500;
+        }
+        double centerX = avgX;
+        double centerY = avgY;
+
+        int hubCount = hubs.Count;
+        if (hubCount == 1)
+        {
+            hubs[0].X = centerX;
+            hubs[0].Y = centerY;
+        }
+        else if (hubCount == 2)
+        {
+            hubs[0].X = centerX;
+            hubs[0].Y = centerY - 320;
+            hubs[1].X = centerX;
+            hubs[1].Y = centerY + 320;
+        }
+        else
+        {
+            double hubStep = 580.0;
+            double startY = centerY - ((hubCount - 1) * hubStep) / 2.0;
+            for (int i = 0; i < hubCount; i++)
+            {
+                hubs[i].X = centerX;
+                hubs[i].Y = startY + i * hubStep;
+            }
+        }
+
+        var adj = new Dictionary<GraphNode, List<GraphNode>>();
+        foreach (var node in Nodes)
+        {
+            adj[node] = new List<GraphNode>();
+        }
+        foreach (var edge in Edges)
+        {
+            if (adj.ContainsKey(edge.Source) && adj.ContainsKey(edge.Target))
+            {
+                adj[edge.Source].Add(edge.Target);
+                adj[edge.Target].Add(edge.Source);
+            }
+        }
+
+        var hubAssignment = new Dictionary<GraphNode, GraphNode>();
+        var queue = new Queue<(GraphNode node, GraphNode hub)>();
+        foreach (var hub in hubs)
+        {
+            hubAssignment[hub] = hub;
+            queue.Enqueue((hub, hub));
+        }
+
+        while (queue.Count > 0)
+        {
+            var (curr, h) = queue.Dequeue();
+            if (adj.TryGetValue(curr, out var neighbors))
+            {
+                foreach (var neighbor in neighbors)
+                {
+                    if (!hubAssignment.ContainsKey(neighbor))
+                    {
+                        hubAssignment[neighbor] = h;
+                        queue.Enqueue((neighbor, h));
+                    }
+                }
+            }
+        }
+
+        foreach (var node in Nodes)
+        {
+            if (!hubAssignment.ContainsKey(node))
+            {
+                hubAssignment[node] = hubs[0];
+            }
+        }
+
+        foreach (var hub in hubs)
+        {
+            var satellites = Nodes
+                .Where(n => !hubs.Contains(n) && hubAssignment[n] == hub)
+                .OrderBy(n => GetNodeTypePriority(n.Type))
+                .ThenBy(n => n.Label)
+                .ToList();
+
+            if (satellites.Count == 0) continue;
+
+            int satIndex = 0;
+            int ringIndex = 0;
+            double currentRadius = 150.0;
+            double radialStep = 110.0;
+
+            while (satIndex < satellites.Count)
+            {
+                int capacity = Math.Max(6, (int)Math.Floor(2.0 * Math.PI * currentRadius / 175.0));
+                int countInRing = Math.Min(capacity, satellites.Count - satIndex);
+                double angleOffset = (ringIndex % 2 == 1) ? (Math.PI / Math.Max(countInRing, 1)) : 0.0;
+
+                double baseAngle = 0.0;
+                if (hubCount > 1)
+                {
+                    baseAngle = Math.Atan2(hub.Y - centerY, hub.X - centerX);
+                }
+
+                for (int i = 0; i < countInRing; i++)
+                {
+                    var sat = satellites[satIndex++];
+                    double theta = baseAngle + angleOffset + (2.0 * Math.PI * i) / countInRing;
+                    double r = currentRadius + ((i % 2 == 0) ? -12.0 : 12.0);
+
+                    sat.X = hub.X + Math.Cos(theta) * r;
+                    sat.Y = hub.Y + Math.Sin(theta) * r;
+                    sat.Vx = 0;
+                    sat.Vy = 0;
+                }
+
+                currentRadius += radialStep;
+                ringIndex++;
+            }
+        }
+
+        const double safeWidth = 175.0;
+        const double safeHeight = 85.0;
+        for (int iter = 0; iter < 45; iter++)
+        {
+            bool anyOverlap = false;
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                var a = Nodes[i];
+                for (int j = i + 1; j < Nodes.Count; j++)
+                {
+                    var b = Nodes[j];
+                    double dx = b.X - a.X;
+                    double dy = b.Y - a.Y;
+                    double overlapX = safeWidth - Math.Abs(dx);
+                    double overlapY = safeHeight - Math.Abs(dy);
+
+                    if (overlapX > 0 && overlapY > 0)
+                    {
+                        anyOverlap = true;
+                        double signX = dx >= 0 ? 1.0 : -1.0;
+                        if (Math.Abs(dx) < 0.001) signX = (i % 2 == 0) ? 1.0 : -1.0;
+
+                        double signY = dy >= 0 ? 1.0 : -1.0;
+                        if (Math.Abs(dy) < 0.001) signY = (j % 2 == 0) ? 1.0 : -1.0;
+
+                        double shiftX = (overlapX * 0.4) * signX;
+                        double shiftY = (overlapY * 0.4) * signY;
+
+                        if (!a.IsPinned && !hubs.Contains(a))
+                        {
+                            a.X -= shiftX * 0.5;
+                            a.Y -= shiftY * 0.5;
+                        }
+                        if (!b.IsPinned && !hubs.Contains(b))
+                        {
+                            b.X += shiftX * 0.5;
+                            b.Y += shiftY * 0.5;
+                        }
+                    }
+                }
+            }
+            if (!anyOverlap) break;
+        }
+
+        foreach (var node in Nodes)
+        {
+            node.Vx = 0;
+            node.Vy = 0;
+        }
+
+        RequestCenterView?.Invoke();
+
+        ShowToast(
+            LocalizationService.Instance.GetString("Graph_Toast_SmartLayoutTitle"),
+            LocalizationService.Instance.GetString("Graph_Toast_SmartLayoutSuccess"),
+            isSuccess: true,
+            durationSeconds: 4);
+    }
+
+    private static int GetNodeTypePriority(GraphNodeType type) => type switch
+    {
+        GraphNodeType.Target => 0,
+        GraphNodeType.Subdomain => 1,
+        GraphNodeType.Technology => 2,
+        GraphNodeType.IpAddress => 3,
+        GraphNodeType.NameServer => 4,
+        GraphNodeType.MailServer => 5,
+        GraphNodeType.Registrar => 6,
+        GraphNodeType.EmailVerified => 7,
+        GraphNodeType.Contact => 8,
+        GraphNodeType.Profile => 9,
+        GraphNodeType.Warning => 10,
+        _ => 11
+    };
+
+    [RelayCommand]
     public void ResetLayout()
     {
         // Place nodes radially around center
@@ -409,7 +739,10 @@ public partial class GraphViewModel : ObservableObject
     [RelayCommand]
     public void SwitchToLiveMode()
     {
-        SelectedSession = null;
+        _selectedSession = null;
+        _selectedInvestigation = null;
+        OnPropertyChanged(nameof(SelectedSession));
+        OnPropertyChanged(nameof(SelectedInvestigation));
         SyncFromLiveSearch();
     }
 
@@ -457,30 +790,261 @@ public partial class GraphViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task PivotSearchOnNodeAsync()
+    public void DismissError()
     {
-        if (SelectedNode == null || IsPivoting) return;
+        HasErrorMessage = false;
+        _toastService.Dismiss();
+    }
 
-        var pivotNode = SelectedNode;
-        string pivotTarget = pivotNode.Label.Trim();
-        if (string.IsNullOrWhiteSpace(pivotTarget)) return;
+    public void ShowToast(string title, string message, bool isSuccess = false, int durationSeconds = 5)
+    {
+        if (isSuccess)
+        {
+            _toastService.ShowSuccess(title, message, durationSeconds);
+        }
+        else
+        {
+            _toastService.ShowError(title, message, durationSeconds);
+        }
+    }
+
+    public void ShowErrorToast(string title, string message, int durationSeconds = 5)
+    {
+        ShowToast(title, message, isSuccess: false, durationSeconds: durationSeconds);
+    }
+
+    public static string SanitizeTarget(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+
+        string target = raw.Trim();
+
+        // 1. Strip enclosing brackets, quotes, braces, parens: e.g. [10 silly.haxx.se] -> 10 silly.haxx.se
+        target = target.Trim('[', ']', '(', ')', '{', '}', '"', '\'', '`', '<', '>');
+
+        // 2. Strip leading @ for usernames
+        target = target.TrimStart('@');
+
+        // 3. Strip DNS MX priority numbers: e.g. "10 silly.haxx.se" -> "silly.haxx.se"
+        target = System.Text.RegularExpressions.Regex.Replace(target, @"^\d+\s+", "");
+
+        // 4. Strip URL schemes: http:// or https://
+        if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            target.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Uri.TryCreate(target, UriKind.Absolute, out var uri))
+            {
+                target = uri.Host;
+            }
+        }
+
+        // 5. Strip trailing dot in DNS FQDNs
+        target = target.TrimEnd('.');
+
+        return target.Trim();
+    }
+
+    private static bool IsPotentiallyValidTarget(string target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return false;
+        if (target.Length > 255) return false;
+        if (target.Any(char.IsWhiteSpace)) return false;
+        if (target.IndexOfAny(new[] { '<', '>', ';', '\\', '/', '"', '\'', '^', '`', '{', '}', '|' }) >= 0) return false;
+
+        return true;
+    }
+
+    private static string ExtractAndSanitizePivotTarget(GraphNode node)
+    {
+        string rawTarget = node.Label;
+
+        if (node.Properties.TryGetValue("Хост", out var host) && !string.IsNullOrWhiteSpace(host))
+        {
+            rawTarget = host;
+        }
+        else if (node.Properties.TryGetValue("Host", out var h) && !string.IsNullOrWhiteSpace(h))
+        {
+            rawTarget = h;
+        }
+        else if (node.Properties.TryGetValue("Username", out var username) && !string.IsNullOrWhiteSpace(username))
+        {
+            rawTarget = username;
+        }
+        else if (node.Properties.TryGetValue("Никнейм", out var nick) && !string.IsNullOrWhiteSpace(nick))
+        {
+            rawTarget = nick;
+        }
+        else if (node.Properties.TryGetValue("Домен", out var domain) && !string.IsNullOrWhiteSpace(domain))
+        {
+            rawTarget = domain;
+        }
+        else if (node.Properties.TryGetValue("Domain", out var d) && !string.IsNullOrWhiteSpace(d))
+        {
+            rawTarget = d;
+        }
+        else if (node.Properties.TryGetValue("Email", out var email) && !string.IsNullOrWhiteSpace(email))
+        {
+            rawTarget = email;
+        }
+
+        return SanitizeTarget(rawTarget);
+    }
+
+    private static string DetermineTargetType(GraphNode node, string target)
+    {
+        if (node.Type == GraphNodeType.Contact || target.Contains('@'))
+        {
+            return "Email";
+        }
+
+        if (System.Net.IPAddress.TryParse(target, out _))
+        {
+            return "Ip";
+        }
+
+        if (node.Type == GraphNodeType.Profile)
+        {
+            return "Auto";
+        }
+
+        return "Domain";
+    }
+
+    private bool IsAutoExpandCandidate(GraphNode node, string rootDomain)
+    {
+        if (node.IsExpanded || node.IsExpanding || node.ExpansionDepth >= 1)
+        {
+            return false;
+        }
+
+        string target = ExtractAndSanitizePivotTarget(node);
+        if (string.IsNullOrWhiteSpace(target) || !IsPotentiallyValidTarget(target))
+        {
+            return false;
+        }
+
+        if (_visitedTargets.Contains(target))
+        {
+            return false;
+        }
+
+        if (node.Type == GraphNodeType.Contact || target.Contains('@'))
+        {
+            return true;
+        }
+
+        if (node.Type == GraphNodeType.Subdomain)
+        {
+            if (SupernodeBlacklist.Contains(target))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rootDomain) &&
+                (target.EndsWith("." + rootDomain, StringComparison.OrdinalIgnoreCase) ||
+                 target.Equals(rootDomain, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async Task RunSmartAutoExpandAsync()
+    {
+        if (IsPivoting) return;
+
+        string rootDomain = TargetDisplay != "—" ? TargetDisplay : _searchViewModel.ActiveTarget;
+        rootDomain = SanitizeTarget(rootDomain);
+
+        var candidates = Nodes.Where(n => IsAutoExpandCandidate(n, rootDomain)).Take(5).ToList();
+        if (candidates.Count == 0) return;
+
+        ShowErrorToast(
+            LocalizationService.Instance.GetString("Graph_AutoExpand_On"),
+            string.Format(LocalizationService.Instance.GetString("Graph_Toast_AutoExpandStarted"), candidates.Count));
+
+        foreach (var candidate in candidates)
+        {
+            if (Nodes.Count >= MaxCanvasNodes)
+            {
+                ShowErrorToast(
+                    LocalizationService.Instance.GetString("Graph_Toast_LimitTitle"),
+                    LocalizationService.Instance.GetString("Graph_Toast_LimitReached"));
+                break;
+            }
+
+            await ExpandNodeAsync(candidate);
+        }
+    }
+
+    [RelayCommand]
+    public Task PivotSearchOnNodeAsync() => ExpandNodeAsync(SelectedNode);
+
+    [RelayCommand]
+    public async Task ExpandNodeAsync(GraphNode? targetNode = null)
+    {
+        var node = targetNode ?? SelectedNode;
+        if (node == null || IsPivoting || node.IsExpanding) return;
+
+        if (Nodes.Count >= MaxCanvasNodes)
+        {
+            ShowErrorToast(
+                LocalizationService.Instance.GetString("Graph_Toast_LimitTitle"),
+                LocalizationService.Instance.GetString("Graph_Toast_LimitReached"));
+            return;
+        }
+
+        string pivotTarget = ExtractAndSanitizePivotTarget(node);
+
+        if (!IsPotentiallyValidTarget(pivotTarget))
+        {
+            string errTitle = LocalizationService.Instance.GetString("Graph_Toast_PivotErrorTitle");
+            string errMsg = string.Format(LocalizationService.Instance.GetString("Graph_Toast_InvalidTarget"), node.Label);
+            ShowErrorToast(errTitle, errMsg);
+            _logService.LogWarning("Pivot", $"Попытка экспанда узла с недопустимым значением: [{node.Label}] -> [{pivotTarget}]");
+            return;
+        }
+
+        if (_visitedTargets.Contains(pivotTarget))
+        {
+            node.IsExpanded = true;
+            string targetNodeId = $"target:{pivotTarget.ToLowerInvariant().Trim()}";
+            if (_nodeMap.TryGetValue(targetNodeId, out var existingTarget) && existingTarget != node)
+            {
+                string bridgeEdgeId = $"{node.Id}->{existingTarget.Id}:Pivot";
+                if (!Edges.Any(e => e.Id == bridgeEdgeId))
+                {
+                    Edges.Add(new GraphEdge(node, existingTarget, "Связь (Кэш)"));
+                }
+            }
+            ShowErrorToast(
+                LocalizationService.Instance.GetString("Graph_Toast_PivotErrorTitle"),
+                string.Format(LocalizationService.Instance.GetString("Graph_Toast_AlreadyVisited"), pivotTarget));
+            return;
+        }
+
+        _visitedTargets.Add(pivotTarget);
 
         CancelPivot();
         _pivotCts = new CancellationTokenSource();
         var ct = _pivotCts.Token;
 
+        node.IsExpanding = true;
         IsPivoting = true;
         PivotingTarget = pivotTarget;
         PivotFindingsCount = 0;
 
-        _logService.LogInfo("Pivot", $"Запуск Pivot-исследования от узла [{pivotTarget}] (тип: {pivotNode.TypeNameRu})");
+        _logService.LogInfo("Pivot", $"Запуск экспанда узла [{pivotTarget}] (тип: {node.TypeNameRu})");
+        _toastService.ShowInfo("Экспанд узла", $"Запущен поиск связей для «{pivotTarget}»");
 
         try
         {
             EnsureCurrentInvestigationExists();
 
-            // 1. Create session via REST API
-            var sessionResponse = await _apiClient.CreateSessionAsync(pivotTarget, "Auto", ct);
+            string targetType = DetermineTargetType(node, pivotTarget);
+            var sessionResponse = await _apiClient.CreateSessionAsync(pivotTarget, targetType, ct);
             string sessionId = sessionResponse.EffectiveId;
 
             if (CurrentInvestigation != null && !CurrentInvestigation.SessionIds.Contains(sessionId))
@@ -492,11 +1056,18 @@ public partial class GraphViewModel : ObservableObject
                 CurrentInvestigationTargets.Add(pivotTarget);
             }
 
-            // 2. Open gRPC stream and listen for findings
             var stream = _streamClient.SubscribeToSessionAsync(sessionId, ct);
 
             await foreach (var message in stream.WithCancellation(ct))
             {
+                if (Nodes.Count >= MaxCanvasNodes)
+                {
+                    ShowErrorToast(
+                        LocalizationService.Instance.GetString("Graph_Toast_LimitTitle"),
+                        LocalizationService.Instance.GetString("Graph_Toast_LimitReached"));
+                    break;
+                }
+
                 if (message.PayloadCase == SearchStreamResponse.PayloadOneofCase.FindingDiscovered)
                 {
                     var discovered = message.FindingDiscovered;
@@ -521,25 +1092,24 @@ public partial class GraphViewModel : ObservableObject
                         if (ct.IsCancellationRequested) return;
 
                         var newEdges = new List<GraphEdge>();
-                        GraphDataMapper.MapFindingToGraph(findingVm, pivotTarget, _nodeMap, newEdges, _random, pivotNode.X, pivotNode.Y);
+                        GraphDataMapper.MapFindingToGraph(findingVm, pivotTarget, _nodeMap, newEdges, _random, node.X, node.Y);
 
-                        foreach (var node in _nodeMap.Values)
+                        foreach (var n in _nodeMap.Values)
                         {
-                            if (!Nodes.Contains(node))
+                            if (!Nodes.Contains(n))
                             {
-                                Nodes.Add(node);
+                                n.ExpansionDepth = node.ExpansionDepth + 1;
+                                Nodes.Add(n);
                             }
                         }
 
-                        // Also connect pivotNode with the new target node if distinct
                         string targetNodeId = $"target:{pivotTarget.ToLowerInvariant().Trim()}";
-                        if (_nodeMap.TryGetValue(targetNodeId, out var newTargetNode) && newTargetNode != pivotNode)
+                        if (_nodeMap.TryGetValue(targetNodeId, out var newTargetNode) && newTargetNode != node)
                         {
-                            string bridgeEdgeId = $"{pivotNode.Id}->{newTargetNode.Id}:Pivot";
+                            string bridgeEdgeId = $"{node.Id}->{newTargetNode.Id}:Pivot";
                             if (!Edges.Any(e => e.Id == bridgeEdgeId))
                             {
-                                var bridgeEdge = new GraphEdge(pivotNode, newTargetNode, "Pivot связь");
-                                Edges.Add(bridgeEdge);
+                                Edges.Add(new GraphEdge(node, newTargetNode, "Pivot связь"));
                             }
                         }
 
@@ -564,18 +1134,36 @@ public partial class GraphViewModel : ObservableObject
                 ReloadAvailableInvestigations();
             }
 
-            _logService.LogInfo("Pivot", $"Pivot-исследование узла [{pivotTarget}] завершено. Находок: {PivotFindingsCount}");
+            _logService.LogInfo("Pivot", $"Экспанд узла [{pivotTarget}] завершен. Находок: {PivotFindingsCount}");
+            _toastService.ShowSuccess("Узел развёрнут", $"Для «{pivotTarget}» найдено связей: {PivotFindingsCount}");
         }
         catch (OperationCanceledException)
         {
-            _logService.LogWarning("Pivot", $"Pivot-исследование [{pivotTarget}] отменено пользователем.");
+            _logService.LogWarning("Pivot", $"Экспанд [{pivotTarget}] отменен пользователем.");
+        }
+        catch (System.Net.Http.HttpRequestException httpEx)
+        {
+            _logService.LogError("Pivot", $"Ошибка экспанда узла [{pivotTarget}]: {httpEx.Message}", httpEx);
+
+            string errTitle = LocalizationService.Instance.GetString("Graph_Toast_PivotErrorTitle");
+            string errMsg = (httpEx.StatusCode == System.Net.HttpStatusCode.BadRequest || httpEx.Message.Contains("400") || httpEx.Message.Contains("invalid"))
+                ? string.Format(LocalizationService.Instance.GetString("Graph_Toast_BadRequest"), pivotTarget)
+                : string.Format(LocalizationService.Instance.GetString("Graph_Toast_GenericError"), pivotTarget, httpEx.Message);
+
+            ShowErrorToast(errTitle, errMsg);
         }
         catch (Exception ex)
         {
-            _logService.LogError("Pivot", $"Ошибка Pivot-исследования узла [{pivotTarget}]: {ex.Message}", ex);
+            _logService.LogError("Pivot", $"Ошибка экспанда узла [{pivotTarget}]: {ex.Message}", ex);
+
+            string errTitle = LocalizationService.Instance.GetString("Graph_Toast_PivotErrorTitle");
+            string errMsg = string.Format(LocalizationService.Instance.GetString("Graph_Toast_GenericError"), pivotTarget, ex.Message);
+            ShowErrorToast(errTitle, errMsg);
         }
         finally
         {
+            node.IsExpanding = false;
+            node.IsExpanded = true;
             IsPivoting = false;
             PivotingTarget = string.Empty;
         }
@@ -609,39 +1197,82 @@ public partial class GraphViewModel : ObservableObject
 
     public void ReloadAvailableInvestigations()
     {
-        var list = _investigationService.GetAll();
-        AvailableInvestigations.Clear();
-        foreach (var item in list)
+        void Update()
         {
-            AvailableInvestigations.Add(item);
+            var currentId = SelectedInvestigation?.Id;
+            var list = _investigationService.GetAll();
+            AvailableInvestigations.Clear();
+            foreach (var item in list)
+            {
+                AvailableInvestigations.Add(item);
+            }
+
+            if (!string.IsNullOrEmpty(currentId))
+            {
+                _selectedInvestigation = AvailableInvestigations.FirstOrDefault(i => i.Id == currentId);
+                OnPropertyChanged(nameof(SelectedInvestigation));
+            }
+        }
+
+        if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
+        {
+            Application.Current.Dispatcher.Invoke(Update);
+        }
+        else
+        {
+            Update();
         }
     }
 
     public void EnsureCurrentInvestigationExists()
     {
+        string target = !string.IsNullOrWhiteSpace(TargetDisplay) && TargetDisplay != "—"
+            ? TargetDisplay
+            : "Новое расследование";
+
         if (CurrentInvestigation == null)
         {
-            string target = !string.IsNullOrWhiteSpace(TargetDisplay) && TargetDisplay != "—"
-                ? TargetDisplay
-                : "Новое расследование";
+            var existing = !string.IsNullOrWhiteSpace(_searchViewModel.CurrentSessionId)
+                ? _investigationService.GetAll().FirstOrDefault(i => i.SessionIds.Contains(_searchViewModel.CurrentSessionId))
+                : _investigationService.GetAll().FirstOrDefault(i => string.Equals(i.RootTarget, target, StringComparison.OrdinalIgnoreCase));
 
-            CurrentInvestigation = new InvestigationModel
+            if (existing != null)
             {
-                Title = $"Расследование: {target}",
-                RootTarget = target,
-                SessionIds = new List<string>()
-            };
-
-            if (!string.IsNullOrWhiteSpace(_searchViewModel.CurrentSessionId))
-            {
-                CurrentInvestigation.SessionIds.Add(_searchViewModel.CurrentSessionId);
+                CurrentInvestigation = existing;
             }
-
-            if (!string.IsNullOrWhiteSpace(target) && target != "—")
+            else
             {
-                CurrentInvestigationTargets.Add(target);
-            }
+                CurrentInvestigation = new InvestigationModel
+                {
+                    Title = $"Расследование: {target}",
+                    RootTarget = target,
+                    SessionIds = new List<string>()
+                };
 
+                if (!string.IsNullOrWhiteSpace(_searchViewModel.CurrentSessionId))
+                {
+                    CurrentInvestigation.SessionIds.Add(_searchViewModel.CurrentSessionId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(target) && target != "—")
+                {
+                    CurrentInvestigationTargets.Add(target);
+                }
+            }
+        }
+
+        bool updated = false;
+        foreach (var finding in _searchViewModel.Findings)
+        {
+            if (!CurrentInvestigation.CachedFindings.Any(f => f.EffectiveId == finding.FindingId))
+            {
+                CurrentInvestigation.CachedFindings.Add(finding.Model);
+                updated = true;
+            }
+        }
+
+        if (updated || !_investigationService.GetAll().Any(i => i.Id == CurrentInvestigation.Id))
+        {
             _investigationService.Save(CurrentInvestigation);
             ReloadAvailableInvestigations();
         }
@@ -652,6 +1283,8 @@ public partial class GraphViewModel : ObservableObject
         IsLoadingSession = true;
         IsLiveMode = false;
         IsInvestigationMode = true;
+        _selectedSession = null;
+        OnPropertyChanged(nameof(SelectedSession));
         CurrentInvestigation = inv;
         CurrentSessionTitle = inv.Title;
         TargetDisplay = inv.RootTarget;

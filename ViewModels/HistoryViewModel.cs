@@ -9,6 +9,7 @@ namespace MeridianClient.ViewModels;
 public partial class HistoryViewModel : ObservableObject
 {
     private readonly IMeridianApiClient _apiClient;
+    private readonly IToastService _toastService;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -31,9 +32,10 @@ public partial class HistoryViewModel : ObservableObject
 
     public event Action<SearchSessionModel>? SessionDetailsLoaded;
 
-    public HistoryViewModel(IMeridianApiClient apiClient)
+    public HistoryViewModel(IMeridianApiClient apiClient, IToastService? toastService = null)
     {
         _apiClient = apiClient;
+        _toastService = toastService ?? new ToastService(new SettingsService());
     }
 
     [RelayCommand]
@@ -44,11 +46,16 @@ public partial class HistoryViewModel : ObservableObject
 
         try
         {
+            var selectedId = SelectedSession?.EffectiveId;
             var sessions = await _apiClient.GetSessionsHistoryAsync();
             Sessions.Clear();
             foreach (var session in sessions.OrderByDescending(s => s.CreatedAt ?? s.StartedAt))
             {
                 Sessions.Add(session);
+            }
+            if (!string.IsNullOrEmpty(selectedId))
+            {
+                SelectedSession = Sessions.FirstOrDefault(s => s.EffectiveId == selectedId);
             }
             OnPropertyChanged(nameof(HasSessions));
             OnPropertyChanged(nameof(IsEmpty));
@@ -81,6 +88,7 @@ public partial class HistoryViewModel : ObservableObject
             if (fullSession != null)
             {
                 SessionDetailsLoaded?.Invoke(fullSession);
+                _toastService.ShowSuccess("Сессия открыта", $"Сессия «{session.EffectiveTarget}» загружена.");
             }
             else
             {
@@ -120,10 +128,12 @@ public partial class HistoryViewModel : ObservableObject
                 }
                 OnPropertyChanged(nameof(HasSessions));
                 OnPropertyChanged(nameof(IsEmpty));
+                _toastService.ShowSuccess("Сессия удалена", $"Сессия «{session.EffectiveTarget}» удалена.");
             }
             else
             {
                 ErrorMessage = "Сервер отклонил удаление сессии.";
+                _toastService.ShowError("Ошибка удаления", "Сервер отклонил удаление сессии.");
             }
         }
         catch (Exception ex)

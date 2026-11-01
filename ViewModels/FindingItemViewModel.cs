@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeridianClient.Models;
+using MeridianClient.Services;
+using MeridianClient.Views;
 
 namespace MeridianClient.ViewModels;
 
@@ -38,6 +43,18 @@ public partial class FindingItemViewModel : ObservableObject
     private bool _isHttpTech;
 
     [ObservableProperty]
+    private bool _isGitHubEmail;
+
+    [ObservableProperty]
+    private bool _isGravatarEmail;
+
+    [ObservableProperty]
+    private bool _isDisposableEmail;
+
+    [ObservableProperty]
+    private bool _isMxEmail;
+
+    [ObservableProperty]
     private ParsedDnsData? _dnsData;
 
     [ObservableProperty]
@@ -50,12 +67,27 @@ public partial class FindingItemViewModel : ObservableObject
     private ParsedHttpTechData? _httpTechData;
 
     [ObservableProperty]
+    private ParsedGitHubEmailData? _gitHubEmailData;
+
+    [ObservableProperty]
+    private ParsedGravatarEmailData? _gravatarEmailData;
+
+    [ObservableProperty]
+    private ParsedDisposableEmailData? _disposableEmailData;
+
+    [ObservableProperty]
+    private ParsedMxEmailData? _mxEmailData;
+
+    [ObservableProperty]
     private bool _isDismissing;
+
+    public bool IsEmailFinding => IsGitHubEmail || IsGravatarEmail || IsDisposableEmail || IsMxEmail;
 
     public string Category
     {
         get
         {
+            if (IsEmailFinding) return "Email";
             if (IsDns) return "DNS";
             if (IsWhois) return "Whois";
             if (IsSubdomain) return "Subdomain";
@@ -68,6 +100,10 @@ public partial class FindingItemViewModel : ObservableObject
     {
         get
         {
+            if (IsGitHubEmail) return "GITHUB";
+            if (IsGravatarEmail) return "GRAVATAR";
+            if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeText ?? "DISPOSABLE";
+            if (IsMxEmail) return "MAIL SERVER";
             if (IsDns && !string.IsNullOrWhiteSpace(DnsData?.RecordType) &&
                 !DnsData.RecordType.Equals("dns_record", StringComparison.OrdinalIgnoreCase))
             {
@@ -95,9 +131,13 @@ public partial class FindingItemViewModel : ObservableObject
     {
         get
         {
+            if (IsGitHubEmail) return "#8957E5";
+            if (IsGravatarEmail) return "#00D2FF";
+            if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeColor ?? "#FF3366";
+            if (IsMxEmail) return "#FF7A00";
             if (IsDns && DnsData != null) return DnsData.RecordTypeColor;
-            if (IsWhois) return "#C084FC"; // Neon Purple
-            if (IsSubdomain) return "#00F0FF"; // Electric Cyan / Aqua
+            if (IsWhois) return "#C084FC";
+            if (IsSubdomain) return "#00F0FF";
             if (IsHttpTech) return HttpTechData?.StatusColor ?? "#00E599";
             return "#00D2FF";
         }
@@ -107,6 +147,10 @@ public partial class FindingItemViewModel : ObservableObject
     {
         get
         {
+            if (IsGitHubEmail) return "#258957E5";
+            if (IsGravatarEmail) return "#2000D2FF";
+            if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeBackground ?? "#25FF3366";
+            if (IsMxEmail) return "#25FF7A00";
             if (IsDns && DnsData != null) return DnsData.RecordTypeBackground;
             if (IsWhois) return "#25A855F7";
             if (IsSubdomain) return "#2000F0FF";
@@ -128,28 +172,54 @@ public partial class FindingItemViewModel : ObservableObject
         var typeUpper = (model.Type ?? string.Empty).ToUpperInvariant();
         var providerUpper = (model.ProviderKey ?? string.Empty).ToUpperInvariant();
 
-        // Recognize DNS findings (type "dns_record", "DNS", "A", "NS", etc. or provider "domain-dns")
+        bool isGitHub = typeUpper.Contains("GITHUB") || providerUpper.Contains("GITHUB");
+        bool isGravatar = typeUpper.Contains("GRAVATAR") || providerUpper.Contains("GRAVATAR");
+        bool isDisposable = typeUpper.Contains("DISPOSABLE") || providerUpper.Contains("DISPOSABLE") || typeUpper.Contains("BURNER");
+        bool isMxEmail = typeUpper.Contains("MX-EMAIL") || typeUpper.Contains("MX_EMAIL") ||
+                         (typeUpper.Contains("EMAIL") && typeUpper.Contains("MX")) ||
+                         providerUpper.Contains("EMAIL-MX") || providerUpper.Contains("MX-EMAIL");
+
         bool isDnsType = typeUpper.Contains("DNS") ||
                          providerUpper.Contains("DNS") ||
                          typeUpper is "A" or "AAAA" or "MX" or "TXT" or "NS" or "CNAME" or "PTR" or "SOA";
 
-        // Recognize WHOIS findings (type "whois_record", "WHOIS" or provider "domain-whois")
+        // 3. Recognize WHOIS findings
         bool isWhoisType = typeUpper.Contains("WHOIS") ||
                            providerUpper.Contains("WHOIS") ||
                            typeUpper.Contains("REGISTRAR");
 
-        // Recognize Subdomain findings (type "subdomain_record", provider "domain-subdomains" or crt.sh)
+        // 4. Recognize Subdomain findings
         bool isSubdomainType = typeUpper.Contains("SUBDOMAIN") ||
                                providerUpper.Contains("SUBDOMAIN") ||
                                providerUpper.Contains("CRT");
 
-        // Recognize HTTP Tech findings (type "http_tech_record", provider "domain-http-tech")
+        // 5. Recognize HTTP Tech findings
         bool isHttpTechType = typeUpper.Contains("HTTP") ||
                               typeUpper.Contains("TECH") ||
                               providerUpper.Contains("HTTP") ||
                               providerUpper.Contains("TECH");
 
-        if (isDnsType)
+        if (isGitHub)
+        {
+            IsGitHubEmail = true;
+            GitHubEmailData = ExtractGitHubEmailData(model);
+        }
+        else if (isGravatar)
+        {
+            IsGravatarEmail = true;
+            GravatarEmailData = ExtractGravatarEmailData(model);
+        }
+        else if (isDisposable)
+        {
+            IsDisposableEmail = true;
+            DisposableEmailData = ExtractDisposableEmailData(model);
+        }
+        else if (isMxEmail)
+        {
+            IsMxEmail = true;
+            MxEmailData = ExtractMxEmailData(model);
+        }
+        else if (isDnsType)
         {
             IsDns = true;
             DnsData = ExtractDnsData(model);
@@ -171,6 +241,185 @@ public partial class FindingItemViewModel : ObservableObject
         }
     }
 
+    private ParsedGitHubEmailData ExtractGitHubEmailData(FindingModel model)
+    {
+        var data = new ParsedGitHubEmailData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetLong(root, "Id", out var id) || TryGetLong(root, "id", out id))
+                    data.Id = id;
+
+                if (TryGetString(root, "Username", out var username) || TryGetString(root, "username", out username) || TryGetString(root, "login", out username))
+                    data.Username = username;
+
+                if (TryGetString(root, "ProfileId", out var profile) || TryGetString(root, "profileId", out profile) ||
+                    TryGetString(root, "ProfileUrl", out profile) || TryGetString(root, "profileUrl", out profile) ||
+                    TryGetString(root, "url", out profile) || TryGetString(root, "html_url", out profile))
+                {
+                    data.ProfileUrl = profile;
+                }
+
+                if (TryGetString(root, "AvatarUrl", out var avatar) || TryGetString(root, "avatarUrl", out avatar) || TryGetString(root, "avatar_url", out avatar))
+                    data.AvatarUrl = avatar;
+
+                if (TryGetString(root, "AccountType", out var accType) || TryGetString(root, "accountType", out accType) || TryGetString(root, "type", out accType))
+                    data.AccountType = accType;
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.ProfileUrl) && !string.IsNullOrWhiteSpace(data.Username))
+        {
+            data.ProfileUrl = $"https://github.com/{data.Username.TrimStart('@')}";
+        }
+
+        return data;
+    }
+
+    private ParsedGravatarEmailData ExtractGravatarEmailData(FindingModel model)
+    {
+        var data = new ParsedGravatarEmailData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Username", out var u) || TryGetString(root, "username", out u))
+                    data.Username = u;
+
+                if (TryGetString(root, "DisplayName", out var d) || TryGetString(root, "displayName", out d) || TryGetString(root, "name", out d))
+                    data.DisplayName = d;
+
+                if (TryGetString(root, "AboutMe", out var a) || TryGetString(root, "aboutMe", out a) || TryGetString(root, "about", out a) || TryGetString(root, "bio", out a))
+                    data.AboutMe = a;
+
+                if (TryGetString(root, "Location", out var loc) || TryGetString(root, "location", out loc))
+                    data.Location = loc;
+
+                if (TryGetString(root, "ProfileUrl", out var p) || TryGetString(root, "profileUrl", out p) || TryGetString(root, "url", out p))
+                    data.ProfileUrl = p;
+
+                if (TryGetString(root, "AvatarUrl", out var av) || TryGetString(root, "avatarUrl", out av) || TryGetString(root, "avatar_url", out av))
+                    data.AvatarUrl = av;
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.ProfileUrl) && !string.IsNullOrWhiteSpace(data.Username))
+        {
+            data.ProfileUrl = $"https://gravatar.com/{data.Username}";
+        }
+
+        return data;
+    }
+
+    private ParsedDisposableEmailData ExtractDisposableEmailData(FindingModel model)
+    {
+        var data = new ParsedDisposableEmailData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Email", out var email) || TryGetString(root, "email", out email))
+                    data.Email = email;
+
+                if (TryGetString(root, "Domain", out var domain) || TryGetString(root, "domain", out domain))
+                    data.Domain = domain;
+
+                if (TryGetBool(root, "IsDisposable", out var disp) || TryGetBool(root, "isDisposable", out disp) ||
+                    TryGetBool(root, "disposable", out disp) || TryGetBool(root, "burner", out disp))
+                {
+                    data.IsDisposable = disp;
+                }
+
+                if (TryGetString(root, "Category", out var cat) || TryGetString(root, "category", out cat))
+                    data.Category = cat;
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.Domain) && !string.IsNullOrWhiteSpace(data.Email) && data.Email.Contains('@'))
+        {
+            data.Domain = data.Email.Split('@')[1];
+        }
+
+        return data;
+    }
+
+    private ParsedMxEmailData ExtractMxEmailData(FindingModel model)
+    {
+        var data = new ParsedMxEmailData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "EmailDomain", out var dom) || TryGetString(root, "emailDomain", out dom) || TryGetString(root, "domain", out dom))
+                    data.EmailDomain = dom;
+
+                if (TryGetString(root, "MailProviderName", out var prov) || TryGetString(root, "mailProviderName", out prov) ||
+                    TryGetString(root, "providerName", out prov) || TryGetString(root, "provider", out prov))
+                {
+                    data.MailProviderName = prov;
+                }
+
+                if (TryGetBool(root, "IsEnterprise", out var ent) || TryGetBool(root, "isEnterprise", out ent) || TryGetBool(root, "enterprise", out ent))
+                    data.IsEnterprise = ent;
+
+                if (TryGetBool(root, "HasSpfProtection", out var spf) || TryGetBool(root, "hasSpfProtection", out spf) ||
+                    TryGetBool(root, "spfProtection", out spf) || TryGetBool(root, "spf", out spf))
+                {
+                    data.HasSpfProtection = spf;
+                }
+
+                if (root.TryGetProperty("MxServers", out var mxProp) || root.TryGetProperty("mxServers", out mxProp) ||
+                    root.TryGetProperty("mx", out mxProp) || root.TryGetProperty("servers", out mxProp))
+                {
+                    if (mxProp.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in mxProp.EnumerateArray())
+                        {
+                            var s = el.GetString();
+                            if (!string.IsNullOrWhiteSpace(s)) data.MxServers.Add(s.Trim());
+                        }
+                    }
+                    else if (mxProp.ValueKind == JsonValueKind.String)
+                    {
+                        var s = mxProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(s))
+                        {
+                            data.MxServers.AddRange(s.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.MailProviderName))
+        {
+            data.MailProviderName = "Почтовый сервер";
+        }
+
+        return data;
+    }
+
     private ParsedDnsData ExtractDnsData(FindingModel model)
     {
         var data = new ParsedDnsData
@@ -190,7 +439,6 @@ public partial class FindingItemViewModel : ObservableObject
 
             if (root.ValueKind == JsonValueKind.Object)
             {
-                // DNS Record Type (can be int like Cloudflare DNS, or string like "A", "NS")
                 if (TryGetInt(root, "type", out var typeInt))
                 {
                     data.RecordType = GetDnsRecordTypeName(typeInt);
@@ -204,7 +452,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.RecordType = model.Type.ToUpperInvariant();
                 }
 
-                // Name / Host
                 if (TryGetString(root, "name", out var name) ||
                     TryGetString(root, "host", out name) ||
                     TryGetString(root, "domain", out name))
@@ -212,7 +459,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.Name = name.TrimEnd('.');
                 }
 
-                // Value / Data (e.g. IP address or NS hostname)
                 if (TryGetString(root, "data", out var val) ||
                     TryGetString(root, "value", out val) ||
                     TryGetString(root, "ip", out val) ||
@@ -223,13 +469,11 @@ public partial class FindingItemViewModel : ObservableObject
                     data.Value = val.TrimEnd('.');
                 }
 
-                // TTL (case-insensitive, Cloudflare uses "TTL")
                 if (TryGetInt(root, "TTL", out var ttl) || TryGetInt(root, "ttl", out ttl))
                 {
                     data.Ttl = ttl;
                 }
 
-                // Priority (for MX / SRV records)
                 if (TryGetInt(root, "priority", out var priority) || TryGetInt(root, "preference", out priority))
                 {
                     data.Priority = priority;
@@ -248,6 +492,16 @@ public partial class FindingItemViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(data.Value))
         {
             data.Value = model.DataJson;
+        }
+
+        if (string.Equals(data.RecordType, "MX", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(data.Value))
+        {
+            var parts = data.Value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2 && int.TryParse(parts[0], out var prio))
+            {
+                data.Priority ??= prio;
+                data.Value = parts[1].TrimEnd('.');
+            }
         }
 
         return data;
@@ -269,7 +523,6 @@ public partial class FindingItemViewModel : ObservableObject
 
             if (root.ValueKind == JsonValueKind.Object)
             {
-                // 1. Domain Name (RDAP "ldhName" or standard "domainName" / "domain")
                 if (TryGetString(root, "ldhName", out var ldh) ||
                     TryGetString(root, "domainName", out ldh) ||
                     TryGetString(root, "domain", out ldh) ||
@@ -278,7 +531,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.DomainName = ldh;
                 }
 
-                // 2. Status (can be string or array in RDAP)
                 if (root.TryGetProperty("status", out var statusProp))
                 {
                     if (statusProp.ValueKind == JsonValueKind.Array)
@@ -297,7 +549,6 @@ public partial class FindingItemViewModel : ObservableObject
                     }
                 }
 
-                // 3. RDAP Events (Registration, Expiration, Last Changed)
                 if (root.TryGetProperty("events", out var eventsProp) && eventsProp.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var evt in eventsProp.EnumerateArray())
@@ -327,7 +578,6 @@ public partial class FindingItemViewModel : ObservableObject
                     }
                 }
 
-                // Traditional Whois Dates (fallback if events was not present)
                 if (string.IsNullOrWhiteSpace(data.CreatedDate) &&
                     (TryGetString(root, "creationDate", out var cd) ||
                      TryGetString(root, "createdDate", out cd) ||
@@ -344,7 +594,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.ExpiresDate = FormatDateString(ed);
                 }
 
-                // 4. RDAP Entities (Registrar, Registrant Org/Country)
                 if (root.TryGetProperty("entities", out var entitiesProp) && entitiesProp.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var entity in entitiesProp.EnumerateArray())
@@ -361,7 +610,6 @@ public partial class FindingItemViewModel : ObservableObject
                             }
                         }
 
-                        // Extract registrar name
                         if (roles.Contains("registrar"))
                         {
                             var regName = ExtractVcardFn(entity);
@@ -375,7 +623,6 @@ public partial class FindingItemViewModel : ObservableObject
                             }
                         }
 
-                        // Extract registrant country / org
                         if (roles.Contains("registrant") || roles.Contains("administrative"))
                         {
                             var country = ExtractVcardCountry(entity);
@@ -387,7 +634,6 @@ public partial class FindingItemViewModel : ObservableObject
                     }
                 }
 
-                // Fallback traditional Registrar property
                 if (string.IsNullOrWhiteSpace(data.Registrar) &&
                     (TryGetString(root, "registrar", out var reg) ||
                      TryGetString(root, "registrarName", out reg) ||
@@ -396,7 +642,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.Registrar = reg;
                 }
 
-                // Fallback traditional Country
                 if (string.IsNullOrWhiteSpace(data.RegistrantCountry) &&
                     (TryGetString(root, "country", out var countryVal) ||
                      TryGetString(root, "registrantCountry", out countryVal)))
@@ -404,7 +649,6 @@ public partial class FindingItemViewModel : ObservableObject
                     data.RegistrantCountry = countryVal;
                 }
 
-                // 5. Nameservers (RDAP "nameservers" array with "ldhName")
                 if (root.TryGetProperty("nameservers", out var nsProp) ||
                     root.TryGetProperty("nameServers", out nsProp))
                 {
@@ -569,6 +813,47 @@ public partial class FindingItemViewModel : ObservableObject
         return false;
     }
 
+    private static bool TryGetLong(JsonElement obj, string propertyName, out long result)
+    {
+        result = 0;
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (prop.Value.TryGetInt64(out result)) return true;
+                if (prop.Value.ValueKind == JsonValueKind.String && long.TryParse(prop.Value.GetString(), out result)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryGetBool(JsonElement obj, string propertyName, out bool result)
+    {
+        result = false;
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (prop.Value.ValueKind == JsonValueKind.True)
+                {
+                    result = true;
+                    return true;
+                }
+                if (prop.Value.ValueKind == JsonValueKind.False)
+                {
+                    result = false;
+                    return true;
+                }
+                if (prop.Value.ValueKind == JsonValueKind.String && bool.TryParse(prop.Value.GetString(), out var b))
+                {
+                    result = b;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private ParsedSubdomainData ExtractSubdomainData(FindingModel model)
     {
         var data = new ParsedSubdomainData();
@@ -691,33 +976,6 @@ public partial class FindingItemViewModel : ObservableObject
         return data;
     }
 
-    private static bool TryGetBool(JsonElement obj, string propertyName, out bool result)
-    {
-        result = false;
-        foreach (var prop in obj.EnumerateObject())
-        {
-            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                if (prop.Value.ValueKind == JsonValueKind.True)
-                {
-                    result = true;
-                    return true;
-                }
-                if (prop.Value.ValueKind == JsonValueKind.False)
-                {
-                    result = false;
-                    return true;
-                }
-                if (prop.Value.ValueKind == JsonValueKind.String && bool.TryParse(prop.Value.GetString(), out var b))
-                {
-                    result = b;
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private static string FormatJson(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
@@ -755,5 +1013,70 @@ public partial class FindingItemViewModel : ObservableObject
         {
             Clipboard.SetText(toCopy);
         }
+    }
+
+    [RelayCommand]
+    private void OpenUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+        try
+        {
+            var psi = new ProcessStartInfo(url)
+            {
+                UseShellExecute = true
+            };
+            Process.Start(psi);
+        }
+        catch { }
+    }
+
+    [RelayCommand]
+    private void PreviewAvatar()
+    {
+        var loc = LocalizationService.Instance;
+        string title;
+        string? avatarUrl;
+        string displayName;
+        string? subtitle;
+        string? profileUrl;
+        Color accentColor;
+
+        if (IsGitHubEmail && GitHubEmailData != null)
+        {
+            title = loc.GetString("Avatar_Dialog_Title_GitHub");
+            avatarUrl = GitHubEmailData.AvatarUrl;
+            displayName = !string.IsNullOrWhiteSpace(GitHubEmailData.FormattedUsername) ? GitHubEmailData.FormattedUsername : (GitHubEmailData.Username ?? string.Empty);
+            subtitle = !string.IsNullOrWhiteSpace(GitHubEmailData.AccountType)
+                ? $"GitHub {GitHubEmailData.AccountType} • ID: {GitHubEmailData.Id}"
+                : $"GitHub User • ID: {GitHubEmailData.Id}";
+            profileUrl = GitHubEmailData.ProfileUrl;
+            accentColor = Color.FromRgb(137, 87, 229);
+        }
+        else if (IsGravatarEmail && GravatarEmailData != null)
+        {
+            title = loc.GetString("Avatar_Dialog_Title_Gravatar");
+            avatarUrl = GravatarEmailData.AvatarUrl;
+            displayName = !string.IsNullOrWhiteSpace(GravatarEmailData.EffectiveName)
+                ? GravatarEmailData.EffectiveName
+                : (!string.IsNullOrWhiteSpace(GravatarEmailData.FormattedUsername) ? GravatarEmailData.FormattedUsername : (GravatarEmailData.Username ?? string.Empty));
+            subtitle = !string.IsNullOrWhiteSpace(GravatarEmailData.Location)
+                ? GravatarEmailData.Location
+                : GravatarEmailData.FormattedUsername;
+            profileUrl = GravatarEmailData.ProfileUrl;
+            accentColor = Color.FromRgb(0, 210, 255);
+        }
+        else
+        {
+            return;
+        }
+
+        AvatarPreviewWindow.Show(
+            Application.Current?.MainWindow,
+            title,
+            avatarUrl,
+            displayName,
+            subtitle,
+            profileUrl,
+            accentColor);
     }
 }

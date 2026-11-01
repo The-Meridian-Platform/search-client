@@ -73,6 +73,7 @@ public partial class App : Application
         services.AddSingleton<ILocalizationService>(LocalizationService.Instance);
         services.AddSingleton<IThemeService>(ThemeService.Instance);
         services.AddSingleton<IHealthCheckService, HealthCheckService>();
+        services.AddSingleton<IToastService, ToastService>();
         services.AddSingleton<IInvestigationService, InvestigationService>();
         services.AddSingleton<IMeridianApiClient, MeridianApiClient>();
         services.AddSingleton<IMeridianStreamClient, MeridianStreamClient>();

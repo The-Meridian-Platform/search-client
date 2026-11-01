@@ -363,6 +363,13 @@
                     </EventTrigger>
                 </ContentControl.Triggers>
             </ContentControl>
+
+            <views:ToastNotificationControl x:Name="toastControl"
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            Margin="0,0,32,32"
+                                            Panel.ZIndex="9999" />
         </Grid>
     </Grid>
 </ui:FluentWindow>

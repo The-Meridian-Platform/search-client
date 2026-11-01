@@ -11,4 +11,5 @@ public class AppSettings
     public string CustomCardColor { get; set; } = "#161B22";
     public string CustomForegroundColor { get; set; } = "#F0F6FC";
     public string CustomAccentColor { get; set; } = "#00D2FF";
+    public bool EnableToasts { get; set; } = true;
 }

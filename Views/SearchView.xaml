@@ -148,11 +148,16 @@
                             Margin="0,0,10,0"
                             VerticalContentAlignment="Center"
                             Height="42"
+                            KeyDown="TargetInput_KeyDown"
                             BorderBrush="{DynamicResource CardBorderBrush}"
                             Background="{DynamicResource AppBackgroundBrush}"
                             Foreground="{DynamicResource PrimaryTextBrush}"
                             FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                            FontSize="13" />
+                            FontSize="13">
+                    <ui:TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding StartSearchCommand}" />
+                    </ui:TextBox.InputBindings>
+                </ui:TextBox>
 
                 <!-- Target Type ComboBox -->
                 <ComboBox Grid.Column="1"
@@ -338,7 +343,7 @@
                             <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.4" />
                         </Border.Effect>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="НАХОДКИ: " Foreground="#67E8F9" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{DynamicResource Search_Metric_Findings}" Foreground="#67E8F9" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalFindingsCount}"
                                        FontWeight="Black"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
@@ -355,7 +360,7 @@
                             Padding="10,4"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="DNS: " Foreground="#93C5FD" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{DynamicResource Search_Metric_DNS}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding DnsFindingsCount}"
                                        FontWeight="Bold"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
@@ -372,7 +377,7 @@
                             Padding="10,4"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="WHOIS: " Foreground="#F472B6" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{DynamicResource Search_Metric_WHOIS}" Foreground="#F472B6" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding WhoisFindingsCount}"
                                        FontWeight="Bold"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
@@ -389,7 +394,7 @@
                             Padding="10,4"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ПОДДОМЕНЫ: " Foreground="#67E8F9" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{DynamicResource Search_Metric_Subdomains}" Foreground="#67E8F9" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding SubdomainFindingsCount}"
                                        FontWeight="Bold"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
@@ -403,13 +408,30 @@
                             BorderBrush="#3300E599"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="10,4">
+                            Padding="10,4"
+                            Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ВЕБ-СТЕК: " Foreground="#6EE7B7" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{DynamicResource Search_Metric_Tech}" Foreground="#6EE7B7" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding HttpTechFindingsCount}"
                                        FontWeight="Bold"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                        Foreground="#00E599"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Email / Profiles Counter -->
+                    <Border Background="#1A8957E5"
+                            BorderBrush="#338957E5"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Search_Metric_Email}" Foreground="#C084FC" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding EmailFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#8957E5"
                                        FontSize="12" />
                         </StackPanel>
                     </Border>
@@ -569,6 +591,11 @@
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=All, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="All"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="{DynamicResource Search_FilterEmail}"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Email, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="Email"
                                      Style="{StaticResource CyberFilterChipStyle}" />
                         <RadioButton Content="{DynamicResource Search_FilterDNS}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=DNS, Mode=OneWay}"
@@ -1263,7 +1290,443 @@
                                         </Border>
                                     </StackPanel>
 
-                                    <!-- 5. Generic Other Template -->
+                                    <!-- 5. GitHub Profile Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsGitHubEmail, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PreviewAvatarCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,14,0"
+                                                    Cursor="Hand"
+                                                    ToolTip="Просмотреть аватар">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="avatarBorder"
+                                                                Width="48" Height="48"
+                                                                CornerRadius="24"
+                                                                Background="#1A8957E5"
+                                                                BorderBrush="#4D8957E5"
+                                                                BorderThickness="1.5"
+                                                                ClipToBounds="True">
+                                                            <Grid>
+                                                                <ui:SymbolIcon Symbol="PersonCircle24" FontSize="26" Foreground="#8957E5"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                <Image Source="{Binding GitHubEmailData.AvatarUrl}"
+                                                                       Stretch="UniformToFill"
+                                                                       Width="48" Height="48"
+                                                                       Visibility="{Binding GitHubEmailData.HasAvatar, Converter={StaticResource BoolToVis}}" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="avatarBorder" Property="BorderBrush" Value="#8957E5" />
+                                                                <Setter TargetName="avatarBorder" Property="Background" Value="#338957E5" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <!-- Details -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding GitHubEmailData.FormattedUsername}"
+                                                               FontSize="16"
+                                                               FontWeight="Black"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               Foreground="#F8FAFC"
+                                                               VerticalAlignment="Center" />
+
+                                                    <!-- Account Type Pill -->
+                                                    <Border Background="#208957E5"
+                                                            BorderBrush="#4D8957E5"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="8,2"
+                                                            Margin="10,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding GitHubEmailData.AccountType}"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   FontFamily="JetBrains Mono"
+                                                                   Foreground="#C084FC" />
+                                                    </Border>
+
+                                                    <!-- Copy Username Button -->
+                                                    <Button Command="{Binding CopyValueCommand}"
+                                                            CommandParameter="{Binding GitHubEmailData.Username}"
+                                                            ToolTip="Скопировать никнейм"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,0"
+                                                            Margin="6,0,0,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                    </Button>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="GITHUB ID: " FontSize="10" FontWeight="Bold" Foreground="#64748B" />
+                                                    <TextBlock Text="{Binding GitHubEmailData.Id}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="11"
+                                                               Foreground="#94A3B8"
+                                                               Margin="0,0,12,0" />
+
+                                                    <TextBlock Text="{DynamicResource Search_Card_Profile_Url}" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,4,0" />
+                                                    <TextBlock Text="{Binding GitHubEmailData.ProfileUrl}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="11"
+                                                               Foreground="#8957E5"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Open in Browser Button -->
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding OpenUrlCommand}"
+                                                    CommandParameter="{Binding GitHubEmailData.ProfileUrl}"
+                                                    Style="{StaticResource CyberGhostButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    Height="34"
+                                                    Padding="12,0"
+                                                    ToolTip="Открыть профиль на GitHub в браузере">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Open24" FontSize="13" Foreground="#8957E5" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{DynamicResource Search_Card_Profile_Btn}" FontSize="11" FontWeight="Bold" Foreground="#8957E5" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- 6. Gravatar Profile Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsGravatarEmail, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PreviewAvatarCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,14,0"
+                                                    Cursor="Hand"
+                                                    ToolTip="Просмотреть аватар">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="avatarBorder"
+                                                                Width="48" Height="48"
+                                                                CornerRadius="24"
+                                                                Background="#1A00D2FF"
+                                                                BorderBrush="#4D00D2FF"
+                                                                BorderThickness="1.5"
+                                                                ClipToBounds="True">
+                                                            <Grid>
+                                                                <ui:SymbolIcon Symbol="PersonCircle24" FontSize="26" Foreground="#00D2FF"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                <Image Source="{Binding GravatarEmailData.AvatarUrl}"
+                                                                       Stretch="UniformToFill"
+                                                                       Width="48" Height="48"
+                                                                       Visibility="{Binding GravatarEmailData.HasAvatar, Converter={StaticResource BoolToVis}}" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="avatarBorder" Property="BorderBrush" Value="#00D2FF" />
+                                                                <Setter TargetName="avatarBorder" Property="Background" Value="#3300D2FF" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <!-- Details -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding GravatarEmailData.EffectiveName}"
+                                                               FontSize="16"
+                                                               FontWeight="Black"
+                                                               Foreground="#F8FAFC"
+                                                               VerticalAlignment="Center" />
+
+                                                    <TextBlock Text="{Binding GravatarEmailData.FormattedUsername}"
+                                                               FontSize="13"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               Foreground="#00D2FF"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center" />
+
+                                                    <!-- Copy Username Button -->
+                                                    <Button Command="{Binding CopyValueCommand}"
+                                                            CommandParameter="{Binding GravatarEmailData.Username}"
+                                                            ToolTip="Скопировать никнейм"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,0"
+                                                            Margin="6,0,0,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                    </Button>
+                                                </StackPanel>
+
+                                                <!-- Location & About Me -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0"
+                                                            Visibility="{Binding GravatarEmailData.HasLocation, Converter={StaticResource BoolToVis}}">
+                                                    <ui:SymbolIcon Symbol="Location24" FontSize="11" Foreground="#64748B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding GravatarEmailData.Location}"
+                                                               FontSize="11"
+                                                               Foreground="#94A3B8"
+                                                               FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+
+                                                <TextBlock Text="{Binding GravatarEmailData.AboutMe}"
+                                                           FontSize="11"
+                                                           FontStyle="Italic"
+                                                           Foreground="#CBD5E1"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0"
+                                                           Visibility="{Binding GravatarEmailData.HasAboutMe, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+
+                                            <!-- Open in Browser Button -->
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding OpenUrlCommand}"
+                                                    CommandParameter="{Binding GravatarEmailData.ProfileUrl}"
+                                                    Style="{StaticResource CyberGhostButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    Height="34"
+                                                    Padding="12,0"
+                                                    ToolTip="Открыть профиль Gravatar в браузере"
+                                                    Visibility="{Binding GravatarEmailData.HasProfileUrl, Converter={StaticResource BoolToVis}}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Open24" FontSize="13" Foreground="#00D2FF" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{DynamicResource Search_Card_Profile_Btn}" FontSize="11" FontWeight="Bold" Foreground="#00D2FF" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- 7. Disposable Email Detector Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsDisposableEmail, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <!-- Risk / Status Banner -->
+                                        <Border Background="{Binding DisposableEmailData.StatusBadgeBackground}"
+                                                BorderBrush="{Binding DisposableEmailData.StatusBadgeColor}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="14,10"
+                                                Margin="0,0,0,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Warning Icon -->
+                                                <Border Grid.Column="0"
+                                                        Width="36" Height="36"
+                                                        CornerRadius="18"
+                                                        Background="{Binding DisposableEmailData.StatusBadgeBackground}"
+                                                        BorderBrush="{Binding DisposableEmailData.StatusBadgeColor}"
+                                                        BorderThickness="1"
+                                                        Margin="0,0,12,0">
+                                                    <ui:SymbolIcon Symbol="{Binding DisposableEmailData.StatusIconSymbol}" FontSize="18" Foreground="{Binding DisposableEmailData.StatusBadgeColor}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <!-- Text & Advice -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DisposableEmailData.StatusWarningTitle}"
+                                                               FontSize="13"
+                                                               FontWeight="Black"
+                                                               Foreground="{Binding DisposableEmailData.StatusBadgeColor}" />
+                                                    <TextBlock Text="{Binding DisposableEmailData.StatusWarningMessage}"
+                                                               FontSize="11"
+                                                               Foreground="#E2E8F0"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+
+                                                <!-- Status Pill -->
+                                                <Border Grid.Column="2"
+                                                        Background="{Binding DisposableEmailData.StatusBadgeBackground}"
+                                                        BorderBrush="{Binding DisposableEmailData.StatusBadgeColor}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="10,4"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DisposableEmailData.StatusBadgeText}"
+                                                               FontFamily="JetBrains Mono"
+                                                               FontSize="10"
+                                                               FontWeight="Bold"
+                                                               Foreground="{Binding DisposableEmailData.StatusBadgeColor}" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Metadata Details -->
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{DynamicResource Search_Card_Disposable_Domain}" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding DisposableEmailData.Domain}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontWeight="Bold"
+                                                               FontSize="12"
+                                                               Foreground="#F8FAFC" />
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{DynamicResource Search_Card_Disposable_Category}" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding DisposableEmailData.Category}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#94A3B8" />
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="{DynamicResource Search_Card_Disposable_TargetEmail}" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding DisposableEmailData.Email, TargetNullValue='—', FallbackValue='—'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#94A3B8" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- 8. MX Server & Mail Provider Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsMxEmail, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <!-- Top Row: Provider Name & Badges -->
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Mail24" FontSize="16" Foreground="#FF7A00" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding MxEmailData.MailProviderName}"
+                                                               FontSize="16"
+                                                               FontWeight="Black"
+                                                               Foreground="#F8FAFC"
+                                                               VerticalAlignment="Center" />
+
+                                                    <!-- Enterprise Pill -->
+                                                    <Border Background="#2000D2FF"
+                                                            BorderBrush="#4D00D2FF"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="8,2"
+                                                            Margin="10,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{Binding MxEmailData.IsEnterprise, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="ENTERPRISE"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   FontFamily="JetBrains Mono"
+                                                                   Foreground="#00D2FF" />
+                                                    </Border>
+
+                                                    <!-- SPF Protection Pill -->
+                                                    <Border Background="{Binding MxEmailData.SpfBadgeBackground}"
+                                                            BorderBrush="{Binding MxEmailData.SpfBadgeColor}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="8,2"
+                                                            Margin="8,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding MxEmailData.SpfBadgeText}"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   FontFamily="JetBrains Mono"
+                                                                   Foreground="{Binding MxEmailData.SpfBadgeColor}" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" Margin="24,3,0,0">
+                                                    <TextBlock Text="{DynamicResource Search_Card_Mx_Domain}" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,4,0" />
+                                                    <TextBlock Text="{Binding MxEmailData.EmailDomain}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="11"
+                                                               Foreground="#94A3B8" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- MX Server Gateways List -->
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Visibility="{Binding MxEmailData.HasMxServers, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Search_Card_Mx_Gateways}" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6" />
+                                                <ItemsControl ItemsSource="{Binding MxEmailData.MxServers}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1AFFFFFF"
+                                                                    BorderBrush="#25FFFFFF"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    Padding="8,3"
+                                                                    Margin="0,0,6,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="Server24" FontSize="11" Foreground="#FF7A00" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding}"
+                                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                                               FontSize="11"
+                                                                               Foreground="#F1F5F9" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- 9. Generic Other Template -->
                                     <StackPanel Grid.Row="1"
                                                 Margin="0,4,0,4">
                                         <StackPanel.Style>
@@ -1276,6 +1739,7 @@
                                                             <Condition Binding="{Binding IsWhois}" Value="False" />
                                                             <Condition Binding="{Binding IsSubdomain}" Value="False" />
                                                             <Condition Binding="{Binding IsHttpTech}" Value="False" />
+                                                            <Condition Binding="{Binding IsEmailFinding}" Value="False" />
                                                         </MultiDataTrigger.Conditions>
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </MultiDataTrigger>

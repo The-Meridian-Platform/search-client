@@ -5,18 +5,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using MeridianClient.Models;
+using MeridianClient.Services;
 using MeridianClient.ViewModels;
 using Wpf.Ui.Controls;
 using TextBlock = System.Windows.Controls.TextBlock;
+using MenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace MeridianClient.Views;
 
 public partial class GraphView : UserControl
 {
     private readonly Dictionary<GraphNode, FrameworkElement> _nodeVisuals = new();
+    private readonly Dictionary<string, DateTime> _edgeSpawnTimes = new();
     private readonly Canvas _edgeCanvas = new();
     private readonly Canvas _nodesContainer = new();
 
@@ -58,7 +62,7 @@ public partial class GraphView : UserControl
             ((INotifyCollectionChanged)vm.Edges).CollectionChanged -= OnEdgesCollectionChanged;
             ((INotifyCollectionChanged)vm.Edges).CollectionChanged += OnEdgesCollectionChanged;
 
-            RebuildAllVisuals();
+            RebuildAllVisuals(animate: true);
 
             CompositionTarget.Rendering -= OnRenderFrame;
             CompositionTarget.Rendering += OnRenderFrame;
@@ -84,6 +88,8 @@ public partial class GraphView : UserControl
         {
             _nodesContainer.Children.Clear();
             _nodeVisuals.Clear();
+            _edgeSpawnTimes.Clear();
+            _edgeCanvas.Children.Clear();
             return;
         }
 
@@ -101,9 +107,11 @@ public partial class GraphView : UserControl
 
         if (e.NewItems != null)
         {
+            int delay = 0;
             foreach (GraphNode node in e.NewItems)
             {
-                CreateVisualForNode(node);
+                CreateVisualForNode(node, animate: true, delayMs: delay);
+                delay = Math.Min(delay + 35, 300);
             }
         }
     }
@@ -113,23 +121,27 @@ public partial class GraphView : UserControl
         // Edges are redrawn every frame in OnRenderFrame
     }
 
-    private void RebuildAllVisuals()
+    private void RebuildAllVisuals(bool animate = false)
     {
         _nodesContainer.Children.Clear();
         _nodeVisuals.Clear();
+        _edgeSpawnTimes.Clear();
 
         if (DataContext is GraphViewModel vm)
         {
+            int index = 0;
             foreach (var node in vm.Nodes)
             {
-                CreateVisualForNode(node);
+                int delay = animate ? Math.Min(index * 25, 450) : 0;
+                CreateVisualForNode(node, animate: animate, delayMs: delay);
+                index++;
             }
         }
     }
 
     private const double NodeContainerWidth = 160.0;
 
-    private void CreateVisualForNode(GraphNode node)
+    private void CreateVisualForNode(GraphNode node, bool animate = false, int delayMs = 0)
     {
         if (_nodeVisuals.ContainsKey(node)) return;
 
@@ -159,7 +171,7 @@ public partial class GraphView : UserControl
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        if (node.Type == GraphNodeType.Target)
+        if (node.Type == GraphNodeType.Target && !animate)
         {
             circle.Effect = new DropShadowEffect
             {
@@ -177,7 +189,7 @@ public partial class GraphView : UserControl
         var icon = new SymbolIcon
         {
             Symbol = symbol,
-            FontSize = node.Radius * 0.95,
+            FontSize = node.Radius * 1.05,
             Foreground = new SolidColorBrush(node.AccentColor),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
@@ -204,9 +216,18 @@ public partial class GraphView : UserControl
         // Handle clicks and dragging
         container.MouseLeftButtonDown += (s, e) =>
         {
+            Focus();
+
             if (DataContext is GraphViewModel vm)
             {
                 vm.SelectNode(node);
+
+                if (e.ClickCount == 2 && vm.PivotSearchOnNodeCommand.CanExecute(null))
+                {
+                    vm.PivotSearchOnNodeCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
             }
 
             _draggedNode = node;
@@ -238,11 +259,165 @@ public partial class GraphView : UserControl
             }
         };
 
+        var contextMenu = new ContextMenu();
+        var expandMenuItem = new MenuItem
+        {
+            Header = LocalizationService.Instance.GetString("Graph_Btn_ExpandNode"),
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Flash24, FontSize = 14 }
+        };
+        expandMenuItem.Click += (s, e) =>
+        {
+            if (DataContext is GraphViewModel vm && vm.ExpandNodeCommand.CanExecute(node))
+            {
+                vm.ExpandNodeCommand.Execute(node);
+            }
+        };
+
+        var searchMenuItem = new MenuItem
+        {
+            Header = LocalizationService.Instance.GetString("Search_StartButton"),
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Search24, FontSize = 14 }
+        };
+        searchMenuItem.Click += (s, e) =>
+        {
+            if (DataContext is GraphViewModel vm)
+            {
+                vm.SelectNode(node);
+                if (vm.StartSearchOnNodeCommand.CanExecute(null))
+                {
+                    vm.StartSearchOnNodeCommand.Execute(null);
+                }
+            }
+        };
+
+        var copyMenuItem = new MenuItem
+        {
+            Header = LocalizationService.Instance.GetString("Search_Card_CopyJson"),
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24, FontSize = 14 }
+        };
+        copyMenuItem.Click += (s, e) =>
+        {
+            try
+            {
+                Clipboard.SetText(node.Label);
+            }
+            catch { }
+        };
+
+        contextMenu.Opened += (s, e) =>
+        {
+            if (node.IsExpanding)
+            {
+                expandMenuItem.IsEnabled = false;
+                expandMenuItem.Header = LocalizationService.Instance.GetString("Graph_Btn_NodeExpanding");
+            }
+            else if (node.IsExpanded)
+            {
+                expandMenuItem.IsEnabled = false;
+                expandMenuItem.Header = LocalizationService.Instance.GetString("Graph_Btn_NodeExpanded");
+            }
+            else
+            {
+                expandMenuItem.IsEnabled = true;
+                expandMenuItem.Header = LocalizationService.Instance.GetString("Graph_Btn_ExpandNode");
+            }
+        };
+
+        contextMenu.Items.Add(expandMenuItem);
+        contextMenu.Items.Add(searchMenuItem);
+        contextMenu.Items.Add(new Separator());
+        contextMenu.Items.Add(copyMenuItem);
+
+        container.ContextMenu = contextMenu;
+
         _nodeVisuals[node] = container;
         _nodesContainer.Children.Add(container);
 
         Canvas.SetLeft(container, node.X - NodeContainerWidth / 2.0);
         Canvas.SetTop(container, node.Y - node.Radius);
+
+        if (animate)
+        {
+            ApplySpawnAnimation(container, circle, node, delayMs);
+        }
+    }
+
+    private void ApplySpawnAnimation(StackPanel container, Border circle, GraphNode node, int delayMs)
+    {
+        var scale = new ScaleTransform(0.05, 0.05);
+        container.RenderTransformOrigin = new Point(0.5, 0.28);
+        container.RenderTransform = scale;
+        container.Opacity = 0.0;
+
+        var backEase = new BackEase
+        {
+            EasingMode = EasingMode.EaseOut,
+            Amplitude = 0.45
+        };
+        var cubicEase = new CubicEase
+        {
+            EasingMode = EasingMode.EaseOut
+        };
+
+        var scaleXAnim = new DoubleAnimation(0.05, 1.0, TimeSpan.FromMilliseconds(480))
+        {
+            EasingFunction = backEase
+        };
+        var scaleYAnim = new DoubleAnimation(0.05, 1.0, TimeSpan.FromMilliseconds(480))
+        {
+            EasingFunction = backEase
+        };
+        var opacityAnim = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(380))
+        {
+            EasingFunction = cubicEase
+        };
+
+        // Shockwave neon glow pulse
+        var spawnGlow = new DropShadowEffect
+        {
+            Color = node.AccentColor,
+            BlurRadius = 38,
+            ShadowDepth = 0,
+            Opacity = 1.0
+        };
+        circle.Effect = spawnGlow;
+
+        double targetBlur = node.Type == GraphNodeType.Target ? 18.0 : 0.0;
+        double targetGlowOpacity = node.Type == GraphNodeType.Target ? 0.85 : 0.0;
+
+        var blurAnim = new DoubleAnimation(38, targetBlur, TimeSpan.FromMilliseconds(650))
+        {
+            EasingFunction = cubicEase
+        };
+        var glowOpacityAnim = new DoubleAnimation(1.0, targetGlowOpacity, TimeSpan.FromMilliseconds(650))
+        {
+            EasingFunction = cubicEase
+        };
+
+        if (delayMs > 0)
+        {
+            var beginTime = TimeSpan.FromMilliseconds(delayMs);
+            scaleXAnim.BeginTime = beginTime;
+            scaleYAnim.BeginTime = beginTime;
+            opacityAnim.BeginTime = beginTime;
+            blurAnim.BeginTime = beginTime;
+            glowOpacityAnim.BeginTime = beginTime;
+        }
+
+        glowOpacityAnim.Completed += (s, e) =>
+        {
+            if (node.Type != GraphNodeType.Target && !node.IsSelected && !node.IsHighlighted)
+            {
+                circle.Effect = null;
+            }
+        };
+
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        container.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+
+        spawnGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, blurAnim);
+        spawnGlow.BeginAnimation(DropShadowEffect.OpacityProperty, glowOpacityAnim);
     }
 
     private void OnRenderFrame(object? sender, EventArgs e)
@@ -256,12 +431,23 @@ public partial class GraphView : UserControl
             {
                 Canvas.SetLeft(visual, node.X - NodeContainerWidth / 2.0);
                 Canvas.SetTop(visual, node.Y - node.Radius);
-                Canvas.SetTop(visual, node.Y - node.Radius);
 
                 // Update highlight state
                 if (visual is StackPanel panel && panel.Children[0] is Border border)
                 {
-                    if (node.IsSelected)
+                    if (node.IsExpanding)
+                    {
+                        double pulse = (Math.Sin(DateTime.UtcNow.TimeOfDay.TotalSeconds * 7.0) + 1.0) / 2.0;
+                        border.BorderThickness = new Thickness(2.0 + pulse * 1.5);
+                        border.Effect = new DropShadowEffect
+                        {
+                            Color = node.AccentColor,
+                            BlurRadius = 16.0 + pulse * 20.0,
+                            ShadowDepth = 0,
+                            Opacity = 0.85 + pulse * 0.15
+                        };
+                    }
+                    else if (node.IsSelected)
                     {
                         border.BorderThickness = new Thickness(3.0);
                         border.Effect = new DropShadowEffect
@@ -285,8 +471,14 @@ public partial class GraphView : UserControl
                     }
                     else if (node.Type != GraphNodeType.Target)
                     {
-                        border.BorderThickness = new Thickness(1.5);
-                        border.Effect = null;
+                        if (border.Effect is DropShadowEffect effect && effect.HasAnimatedProperties)
+                        {
+                        }
+                        else
+                        {
+                            border.BorderThickness = new Thickness(node.IsExpanded ? 2.0 : 1.5);
+                            border.Effect = null;
+                        }
                     }
                 }
             }
@@ -302,9 +494,19 @@ public partial class GraphView : UserControl
 
         var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
         var edgePenActive = new Pen(brushAccent, 2.0);
+        var now = DateTime.UtcNow;
 
         foreach (var edge in edges)
         {
+            if (!_edgeSpawnTimes.TryGetValue(edge.Id, out var spawnTime))
+            {
+                spawnTime = now;
+                _edgeSpawnTimes[edge.Id] = spawnTime;
+            }
+
+            double ageMs = (now - spawnTime).TotalMilliseconds;
+            double fadeProgress = Math.Clamp(ageMs / 350.0, 0.05, 1.0);
+
             var line = new Line
             {
                 X1 = edge.Source.X,
@@ -313,7 +515,7 @@ public partial class GraphView : UserControl
                 Y2 = edge.Target.Y,
                 Stroke = edge.IsHighlighted ? edgePenActive.Brush : _edgePenNormal.Brush,
                 StrokeThickness = edge.IsHighlighted ? 2.0 : 1.2,
-                Opacity = edge.IsHighlighted ? 0.95 : 0.45
+                Opacity = (edge.IsHighlighted ? 0.95 : 0.45) * fadeProgress
             };
             _edgeCanvas.Children.Add(line);
         }
@@ -339,6 +541,8 @@ public partial class GraphView : UserControl
 
     private void CanvasViewport_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        Focus();
+
         if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
         {
             _isPanning = true;
@@ -420,4 +624,51 @@ public partial class GraphView : UserControl
     }
 
     #endregion
+
+    private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            if (e.OriginalSource == nodeSearchTextBox)
+            {
+                return;
+            }
+
+            if (DataContext is GraphViewModel vm && vm.SelectedNode != null && vm.PivotSearchOnNodeCommand.CanExecute(null))
+            {
+                vm.PivotSearchOnNodeCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void NodeSearchTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            if (DataContext is GraphViewModel vm)
+            {
+                if (vm.SelectedNode != null && vm.PivotSearchOnNodeCommand.CanExecute(null))
+                {
+                    vm.PivotSearchOnNodeCommand.Execute(null);
+                    Focus();
+                    e.Handled = true;
+                }
+                else
+                {
+                    var match = vm.Nodes.FirstOrDefault(n => n.IsHighlighted)
+                                ?? vm.Nodes.FirstOrDefault(n =>
+                                    !string.IsNullOrWhiteSpace(vm.NodeSearchText) &&
+                                    (n.Label.Contains(vm.NodeSearchText, StringComparison.OrdinalIgnoreCase) ||
+                                     n.SubLabel.Contains(vm.NodeSearchText, StringComparison.OrdinalIgnoreCase)));
+                    if (match != null)
+                    {
+                        vm.SelectNode(match);
+                        Focus();
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+    }
 }

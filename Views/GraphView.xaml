@@ -1,4 +1,5 @@
 <UserControl x:Class="MeridianClient.Views.GraphView"
+             x:Name="rootGraphControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -9,7 +10,13 @@
              xmlns:models="clr-namespace:MeridianClient.Models"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance vm:GraphViewModel}"
-             d:DesignHeight="780" d:DesignWidth="1100">
+             d:DesignHeight="780" d:DesignWidth="1100"
+             Focusable="True"
+             PreviewKeyDown="UserControl_PreviewKeyDown">
+
+    <UserControl.InputBindings>
+        <KeyBinding Key="Enter" Command="{Binding PivotSearchOnNodeCommand}" />
+    </UserControl.InputBindings>
 
     <UserControl.Resources>
         <conv:InverseBooleanConverter x:Key="InverseBool" />
@@ -90,14 +97,14 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="liveBtnBorder"
-                                                    Background="{DynamicResource SubtleAccentBrush}"
-                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Background="Transparent"
+                                                    BorderBrush="{DynamicResource CardBorderBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="8"
                                                     Padding="{TemplateBinding Padding}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <!-- Pulse dot -->
-                                                    <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0">
+                                                    <Ellipse x:Name="liveDot" Width="7" Height="7" Fill="{DynamicResource SecondaryTextBrush}" Margin="0,0,8,0">
                                                         <Ellipse.Triggers>
                                                             <EventTrigger RoutedEvent="Loaded">
                                                                 <BeginStoryboard>
@@ -108,13 +115,22 @@
                                                             </EventTrigger>
                                                         </Ellipse.Triggers>
                                                     </Ellipse>
-                                                    <TextBlock Text="LIVE ПОИСК"
+                                                    <TextBlock x:Name="liveText"
+                                                               Text="LIVE ПОИСК"
                                                                FontSize="11"
                                                                FontWeight="Bold"
-                                                               Foreground="{DynamicResource AccentBrush}"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
                                                                VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsLiveMode}" Value="True">
+                                                    <Setter TargetName="liveBtnBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                                    <Setter TargetName="liveBtnBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                    <Setter TargetName="liveDot" Property="Fill" Value="{DynamicResource AccentBrush}" />
+                                                    <Setter TargetName="liveText" Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
@@ -123,10 +139,10 @@
                     </Button>
 
                     <!-- Investigations Dropdown with Placeholder and Delete Button per Item -->
-                    <Grid Width="230" Height="36" Margin="0,0,4,0">
+                    <Grid Width="175" Height="36" Margin="0,0,4,0">
                         <ComboBox ItemsSource="{Binding AvailableInvestigations}"
                                   SelectedItem="{Binding SelectedInvestigation, Mode=TwoWay}"
-                                  Width="230"
+                                  Width="175"
                                   Height="36"
                                   ToolTip="Сохраненные проекты расследований"
                                   VerticalContentAlignment="Center"
@@ -147,7 +163,7 @@
                                                    Foreground="{DynamicResource PrimaryTextBrush}"
                                                    Margin="0,0,8,0" />
                                         <Button Grid.Column="1"
-                                                Command="{Binding DataContext.DeleteInvestigationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Command="{Binding DataContext.DeleteInvestigationCommand, Source={x:Reference rootGraphControl}}"
                                                 CommandParameter="{Binding}"
                                                 Width="22" Height="22"
                                                 Padding="0"
@@ -185,11 +201,11 @@
                     </Button>
 
                     <!-- Session Selector Dropdown with Placeholder -->
-                    <Grid Width="200" Height="36" Margin="0,0,10,0">
+                    <Grid Width="150" Height="36" Margin="0,0,8,0">
                         <ComboBox ItemsSource="{Binding AvailableSessions}"
                                   SelectedItem="{Binding SelectedSession, Mode=TwoWay}"
                                   DisplayMemberPath="FormattedTitle"
-                                  Width="200"
+                                  Width="150"
                                   Height="36"
                                   ToolTip="Одиночные сессии из истории"
                                   VerticalContentAlignment="Center"
@@ -221,14 +237,62 @@
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                        FontSize="12"
                                        FontWeight="Bold"
+                                       MaxWidth="120"
+                                       TextTrimming="CharacterEllipsis"
                                        Foreground="{DynamicResource PrimaryTextBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
+
+                    <!-- Smart Auto-Expand Toggle Button -->
+                    <Button Command="{Binding ToggleAutoExpandCommand}"
+                            Height="36"
+                            Padding="10,0"
+                            Margin="8,0,0,0"
+                            Cursor="Hand"
+                            ToolTip="Smart Auto-Expand (1 уровень): автоматически исследовать найденные Email и прямые поддомены">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="expandBtnBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsAutoExpandEnabled}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsAutoExpandEnabled}" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Flash24" FontSize="13" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding AutoExpandButtonText}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <!-- Center: Metrics Badges & Active Pivot Indicator -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                     <!-- Live Pivot Status Badge -->
                     <Border Background="{DynamicResource SubtleAccentBrush}"
                             BorderBrush="{DynamicResource BorderAccentBrush}"
@@ -240,7 +304,7 @@
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <ui:ProgressRing Width="12" Height="12" Margin="0,0,8,0" IsIndeterminate="True" />
                             <TextBlock Text="PIVOT: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding PivotingTarget}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding PivotingTarget}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" MaxWidth="110" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="(+" FontSize="10" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding PivotFindingsCount}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
                             <TextBlock Text=")" FontSize="10" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
@@ -287,9 +351,9 @@
                             BorderThickness="1"
                             CornerRadius="8"
                             Height="36"
-                            Width="180"
+                            Width="135"
                             Padding="10,0"
-                            Margin="0,0,10,0">
+                            Margin="0,0,8,0">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -303,7 +367,9 @@
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
                                            Visibility="{Binding NodeSearchText, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
-                                <TextBox Text="{Binding NodeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox x:Name="nodeSearchTextBox"
+                                         Text="{Binding NodeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="NodeSearchTextBox_KeyDown"
                                          Background="Transparent"
                                          BorderThickness="0"
                                          Foreground="{DynamicResource PrimaryTextBrush}"
@@ -336,6 +402,14 @@
                             ToolTip="Пауза / Запуск физики связей"
                             Margin="0,0,6,0">
                         <ui:SymbolIcon Symbol="PlayCircle24" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+
+                    <!-- Smart Layout and Freeze Button -->
+                    <Button Command="{Binding OrganizeAndFreezeLayoutCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="{Binding SmartLayoutToolTip}"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="Sparkle24" FontSize="15" Foreground="#00E599" />
                     </Button>
 
                     <!-- Reset Layout Button -->
@@ -396,7 +470,6 @@
             <!-- Empty State Overlay (When graph has no nodes yet) -->
             <Border Grid.Column="0"
                     Background="{DynamicResource AppBackgroundBrush}"
-                    Opacity="0.9"
                     Visibility="{Binding NodesCount, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
                     IsHitTestVisible="False">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -413,6 +486,8 @@
                                Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
+
+
 
             <!-- RIGHT NODE INSPECTOR PANEL -->
             <Border Grid.Column="1"
@@ -449,7 +524,7 @@
                                     Margin="0,0,0,8">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="{Binding SelectedNode.IconSymbol, TargetNullValue=Circle24, FallbackValue=Circle24}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,6,0" />
-                                    <TextBlock Text="{Binding SelectedNode.TypeNameRu}"
+                                    <TextBlock Text="{Binding SelectedNode.TypeName}"
                                                FontSize="10"
                                                FontWeight="Bold"
                                                Foreground="{DynamicResource AccentBrush}" />
@@ -531,10 +606,9 @@
                     <!-- Inspector Actions -->
                     <StackPanel Grid.Row="2">
                         <!-- Pivot Search on Node Button -->
-                        <Button Command="{Binding PivotSearchOnNodeCommand}"
+                        <Button Command="{Binding ExpandNodeCommand}"
                                 Height="38"
                                 Margin="0,0,0,8"
-                                IsEnabled="{Binding IsPivoting, Converter={StaticResource InverseBool}}"
                                 ToolTip="Запустить поиск по этому узлу и добавить новые связи прямо на текущий граф">
                             <Button.Style>
                                 <Style TargetType="Button">
@@ -566,16 +640,64 @@
                                             </ControlTemplate>
                                         </Setter.Value>
                                     </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNode.IsExpanded}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SelectedNode.IsExpanding}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPivoting}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Button.Style>
                             <Grid>
-                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsPivoting, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
-                                    <ui:SymbolIcon Symbol="BranchFork24" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="Развернуть узел на графе" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsPivoting, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding SelectedNode.IsExpanding, Converter={StaticResource BoolToVis}}">
                                     <ui:ProgressRing Width="14" Height="14" Margin="0,0,8,0" IsIndeterminate="True" />
-                                    <TextBlock Text="Разворачивание..." FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource Graph_Btn_NodeExpanding}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding SelectedNode.IsExpanded}" Value="True" />
+                                                        <Condition Binding="{Binding SelectedNode.IsExpanding}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <ui:SymbolIcon Symbol="Checkmark24" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                    <TextBlock Text="{DynamicResource Graph_Btn_NodeExpanded}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding SelectedNode.IsExpanded}" Value="False" />
+                                                        <Condition Binding="{Binding SelectedNode.IsExpanding}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <ui:SymbolIcon Symbol="Flash24" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource Graph_Btn_ExpandNode}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                         </Button>

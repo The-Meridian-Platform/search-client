@@ -12,6 +12,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IMeridianApiClient _apiClient;
     private readonly IThemeService _themeService;
     private readonly ILocalizationService _locService;
+    private readonly IToastService _toastService;
 
     [ObservableProperty]
     private string _backendUrl = "http://localhost:5168";
@@ -38,7 +39,10 @@ public partial class SettingsViewModel : ObservableObject
     private string _customAccentColor = "#00D2FF";
 
     [ObservableProperty]
-    private string _selectedLanguage = "ru"; // "ru" or "en"
+    private string _selectedLanguage = "ru";
+
+    [ObservableProperty]
+    private bool _enableToasts = true;
 
     [ObservableProperty]
     private bool _isTesting;
@@ -89,12 +93,14 @@ public partial class SettingsViewModel : ObservableObject
         ISettingsService settingsService,
         IMeridianApiClient apiClient,
         IThemeService themeService,
-        ILocalizationService locService)
+        ILocalizationService locService,
+        IToastService? toastService = null)
     {
         _settingsService = settingsService;
         _apiClient = apiClient;
         _themeService = themeService;
         _locService = locService;
+        _toastService = toastService ?? new ToastService(settingsService);
 
         var s = _settingsService.Settings;
         BackendUrl = s.BackendUrl;
@@ -108,10 +114,12 @@ public partial class SettingsViewModel : ObservableObject
         CustomFgColor = string.IsNullOrWhiteSpace(s.CustomForegroundColor) ? "#F0F6FC" : s.CustomForegroundColor;
         CustomAccentColor = string.IsNullOrWhiteSpace(s.CustomAccentColor) ? "#00D2FF" : s.CustomAccentColor;
         SelectedLanguage = string.IsNullOrWhiteSpace(s.Language) ? "ru" : s.Language;
+        EnableToasts = s.EnableToasts;
     }
 
     public bool IsCustomThemeSelected => SelectedThemePreset == "Custom";
 
+    partial void OnEnableToastsChanged(bool value) => AutoSave();
     partial void OnBackendUrlChanged(string value) => AutoSave();
     partial void OnAllowUnencryptedHttp2Changed(bool value) => AutoSave();
     partial void OnTimeoutSecondsChanged(int value) => AutoSave();
@@ -236,11 +244,20 @@ public partial class SettingsViewModel : ObservableObject
             var (success, message) = await _apiClient.TestConnectionAsync(BackendUrl);
             IsSuccessResult = success;
             TestResult = message;
+            if (success)
+            {
+                _toastService.ShowSuccess("Шлюз доступен", message);
+            }
+            else
+            {
+                _toastService.ShowError("Шлюз недоступен", message);
+            }
         }
         catch (Exception ex)
         {
             IsSuccessResult = false;
             TestResult = (_locService.CurrentLanguage == "en" ? "Error: " : "Ошибка проверки: ") + ex.Message;
+            _toastService.ShowError("Ошибка подключения", ex.Message);
         }
         finally
         {
@@ -260,7 +277,8 @@ public partial class SettingsViewModel : ObservableObject
             CustomBackgroundColor = CustomBgColor,
             CustomCardColor = CustomCardColor,
             CustomForegroundColor = CustomFgColor,
-            CustomAccentColor = CustomAccentColor
+            CustomAccentColor = CustomAccentColor,
+            EnableToasts = EnableToasts
         };
 
         _settingsService.SaveSettings(settings);

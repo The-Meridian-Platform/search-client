@@ -9,6 +9,15 @@ public class GraphDataMapper
 {
     public static string DetectTargetDomain(FindingItemViewModel finding)
     {
+        if (finding.IsDisposableEmail && finding.DisposableEmailData != null)
+        {
+            if (!string.IsNullOrWhiteSpace(finding.DisposableEmailData.Email)) return finding.DisposableEmailData.Email.Trim();
+            if (!string.IsNullOrWhiteSpace(finding.DisposableEmailData.Domain)) return finding.DisposableEmailData.Domain.Trim();
+        }
+
+        if (finding.IsMxEmail && finding.MxEmailData != null && !string.IsNullOrWhiteSpace(finding.MxEmailData.EmailDomain))
+            return finding.MxEmailData.EmailDomain.Trim();
+
         if (finding.IsWhois && finding.WhoisData != null && !string.IsNullOrWhiteSpace(finding.WhoisData.DomainName))
             return finding.WhoisData.DomainName.Trim();
 
@@ -79,7 +88,8 @@ public class GraphDataMapper
             var node = new GraphNode(id, label, subLabel, type, rawJson, props)
             {
                 X = parent.X + Math.Cos(angle) * dist,
-                Y = parent.Y + Math.Sin(angle) * dist
+                Y = parent.Y + Math.Sin(angle) * dist,
+                ExpansionDepth = parent.ExpansionDepth + 1
             };
             nodes[id] = node;
             return node;
@@ -141,8 +151,24 @@ public class GraphDataMapper
                     break;
 
                 case "MX":
-                    var mxNode = GetOrCreateNode($"mx:{dns.Value.ToLowerInvariant()}", dns.Value, "Почтовый шлюз", GraphNodeType.MailServer, hostNode, finding.RawJson, props);
-                    AddEdgeIfMissing(hostNode, mxNode, "Mail Exchanger");
+                    string mxHost = dns.Value.Trim();
+                    int? mxPrio = dns.Priority;
+                    var mxParts = mxHost.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (mxParts.Length >= 2 && int.TryParse(mxParts[0], out var parsedPrio))
+                    {
+                        mxPrio ??= parsedPrio;
+                        mxHost = mxParts[1];
+                    }
+                    mxHost = mxHost.TrimEnd('.');
+                    props["Хост"] = mxHost;
+                    if (mxPrio.HasValue)
+                    {
+                        props["Приоритет"] = mxPrio.Value.ToString();
+                        props["Значение"] = mxHost;
+                    }
+
+                    var mxNode = GetOrCreateNode($"mx:{mxHost.ToLowerInvariant()}", mxHost, mxPrio.HasValue ? $"MX (Приоритет {mxPrio})" : "Почтовый шлюз", GraphNodeType.MailServer, hostNode, finding.RawJson, props);
+                    AddEdgeIfMissing(hostNode, mxNode, mxPrio.HasValue ? $"MX [{mxPrio}]" : "Mail Exchanger");
                     break;
 
                 case "CNAME":
@@ -272,6 +298,114 @@ public class GraphDataMapper
             {
                 var titleNode = GetOrCreateNode($"title:{tech.Title.ToLowerInvariant()}", tech.Title, "Веб-страница", GraphNodeType.Other, techHostNode, finding.RawJson, props);
                 AddEdgeIfMissing(techHostNode, titleNode, "Заголовок HTML");
+            }
+        }
+
+        // 6. Map GitHub Email Profile findings
+        if (finding.IsGitHubEmail && finding.GitHubEmailData != null)
+        {
+            var gh = finding.GitHubEmailData;
+            string username = !string.IsNullOrWhiteSpace(gh.Username) ? gh.Username.Trim() : "user";
+            string label = gh.FormattedUsername;
+            var props = new Dictionary<string, string>
+            {
+                { "Платформа", "GitHub" },
+                { "Никнейм", username },
+                { "Username", username },
+                { "Тип аккаунта", gh.AccountType },
+                { "Профиль", gh.ProfileUrl },
+                { "ID", gh.Id.ToString() }
+            };
+
+            var ghNode = GetOrCreateNode($"github:{username.ToLowerInvariant()}", label, $"GitHub ({gh.AccountType})", GraphNodeType.Profile, targetNode, finding.RawJson, props);
+            AddEdgeIfMissing(targetNode, ghNode, "GitHub аккаунт");
+        }
+
+        // 7. Map Gravatar Email Profile findings
+        if (finding.IsGravatarEmail && finding.GravatarEmailData != null)
+        {
+            var grav = finding.GravatarEmailData;
+            string label = !string.IsNullOrWhiteSpace(grav.DisplayName)
+                ? grav.DisplayName
+                : (!string.IsNullOrWhiteSpace(grav.Username) ? grav.Username : "Gravatar User");
+            string sub = !string.IsNullOrWhiteSpace(grav.Location)
+                ? $"Gravatar • {grav.Location}"
+                : "Gravatar профиль";
+
+            var props = new Dictionary<string, string>
+            {
+                { "Платформа", "Gravatar" },
+                { "Отображаемое имя", grav.DisplayName },
+                { "Никнейм", grav.Username },
+                { "Username", grav.Username },
+                { "Локация", grav.Location },
+                { "О себе", grav.AboutMe },
+                { "Профиль", grav.ProfileUrl }
+            };
+
+            string nodeId = !string.IsNullOrWhiteSpace(grav.Username)
+                ? $"gravatar:{grav.Username.ToLowerInvariant()}"
+                : $"gravatar:{label.ToLowerInvariant()}";
+
+            var gravNode = GetOrCreateNode(nodeId, label, sub, GraphNodeType.Profile, targetNode, finding.RawJson, props);
+            AddEdgeIfMissing(targetNode, gravNode, "Gravatar профиль");
+        }
+
+        // 8. Map Disposable Email findings
+        if (finding.IsDisposableEmail && finding.DisposableEmailData != null)
+        {
+            var disp = finding.DisposableEmailData;
+            string label = disp.IsDisposable ? "Временная почта" : "Легитимная почта";
+            string sub = !string.IsNullOrWhiteSpace(disp.Domain) ? disp.Domain : "Статус домена";
+            var nodeType = disp.IsDisposable ? GraphNodeType.Warning : GraphNodeType.EmailVerified;
+
+            var props = new Dictionary<string, string>
+            {
+                { "Статус", disp.IsDisposable ? "Одноразовый ящик (Burner)" : "Легитимный домен" },
+                { "Домен", disp.Domain },
+                { "Категория", disp.Category },
+                { "Email", disp.Email }
+            };
+
+            string nodeId = $"disposable:{(string.IsNullOrWhiteSpace(disp.Domain) ? "check" : disp.Domain.ToLowerInvariant())}";
+            var dispNode = GetOrCreateNode(nodeId, label, sub, nodeType, targetNode, finding.RawJson, props);
+            AddEdgeIfMissing(targetNode, dispNode, disp.IsDisposable ? "Одноразовая почта" : "Легитимная почта");
+        }
+
+        // 9. Map MX Email Server findings
+        if (finding.IsMxEmail && finding.MxEmailData != null)
+        {
+            var mx = finding.MxEmailData;
+            string provName = !string.IsNullOrWhiteSpace(mx.MailProviderName) ? mx.MailProviderName : "Почтовый сервер";
+            string sub = mx.IsEnterprise ? "Enterprise почта" : "Почтовый шлюз";
+
+            var props = new Dictionary<string, string>
+            {
+                { "Провайдер", provName },
+                { "Домен", mx.EmailDomain },
+                { "Enterprise", mx.IsEnterprise ? "Да" : "Нет" },
+                { "SPF защита", mx.HasSpfProtection ? "Активна" : "Не обнаружена" },
+                { "MX Серверы", mx.FormattedMxServers }
+            };
+
+            string provNodeId = $"mx-provider:{provName.ToLowerInvariant()}";
+            var provNode = GetOrCreateNode(provNodeId, provName, sub, GraphNodeType.MailServer, targetNode, finding.RawJson, props);
+            AddEdgeIfMissing(targetNode, provNode, "Почтовый провайдер");
+
+            foreach (var server in mx.MxServers)
+            {
+                if (!string.IsNullOrWhiteSpace(server))
+                {
+                    string rawServer = server.Trim();
+                    string cleanHost = System.Text.RegularExpressions.Regex.Replace(rawServer, @"^\d+\s+", "").TrimEnd('.');
+                    var srvProps = new Dictionary<string, string>
+                    {
+                        { "Хост", cleanHost },
+                        { "Запись MX", rawServer }
+                    };
+                    var srvNode = GetOrCreateNode($"mx-host:{cleanHost.ToLowerInvariant()}", cleanHost, "MX сервер", GraphNodeType.MailServer, provNode, null, srvProps);
+                    AddEdgeIfMissing(provNode, srvNode, "MX шлюз");
+                }
             }
         }
     }
