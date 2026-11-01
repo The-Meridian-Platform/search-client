@@ -19,10 +19,10 @@
 
         <!-- Linear / Raycast Filter Button Style -->
         <Style x:Key="CyberFilterChipStyle" TargetType="RadioButton">
-            <Setter Property="Background" Value="#33141826" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#94A3B8" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -42,19 +42,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="chipBorder" Property="Background" Value="#4D1F2438" />
-                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#4D00D2FF" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="chipBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="chipBorder" Property="Background" Value="#2A00D2FF" />
-                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#00D2FF" />
-                                <Setter Property="Foreground" Value="#00D2FF" />
-                                <Setter TargetName="chipBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.45" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="chipBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -64,10 +59,10 @@
 
         <!-- Secondary Ghost Action Button Style -->
         <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#261A1D2C" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -84,9 +79,9 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ghostBorder" Property="Background" Value="#3D252B40" />
-                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="#33FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ghostBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,8 +125,8 @@
 
         <!-- TOP BAR: Target input & Start Search -->
         <Border Grid.Row="0"
-                Background="#660F121C"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="14"
@@ -148,13 +143,14 @@
                 <!-- Target Input Box -->
                 <ui:TextBox Grid.Column="0"
                             Text="{Binding TargetInput, UpdateSourceTrigger=PropertyChanged}"
-                            PlaceholderText="Цель разведки (домен, IP-адрес: example.com)"
+                            PlaceholderText="{DynamicResource Search_TargetPlaceholder}"
                             Icon="{ui:SymbolIcon Globe24}"
                             Margin="0,0,10,0"
                             VerticalContentAlignment="Center"
                             Height="42"
-                            BorderBrush="#1AFFFFFF"
-                            Background="#40090B12"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            Background="{DynamicResource AppBackgroundBrush}"
+                            Foreground="{DynamicResource PrimaryTextBrush}"
                             FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                             FontSize="13" />
 
@@ -165,8 +161,9 @@
                           Margin="0,0,10,0"
                           Height="42"
                           VerticalContentAlignment="Center"
-                          Background="#40090B12"
-                          BorderBrush="#1AFFFFFF" />
+                          Background="{DynamicResource AppBackgroundBrush}"
+                          Foreground="{DynamicResource PrimaryTextBrush}"
+                          BorderBrush="{DynamicResource CardBorderBrush}" />
 
                 <!-- Ultra-Premium Neon Cyan Start Search Button -->
                 <Button Grid.Column="2"
@@ -179,33 +176,24 @@
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="neonBorder"
-                                    Background="#00D2FF"
+                                    Background="{DynamicResource AccentBrush}"
                                     CornerRadius="10"
                                     Padding="{TemplateBinding Padding}">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="#00D2FF" BlurRadius="20" ShadowDepth="0" Opacity="0.65" />
-                                </Border.Effect>
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="neonBorder" Property="Background" Value="#33DDFF" />
-                                    <Setter TargetName="neonBorder" Property="Effect">
-                                        <Setter.Value>
-                                            <DropShadowEffect Color="#00D2FF" BlurRadius="28" ShadowDepth="0" Opacity="0.9" />
-                                        </Setter.Value>
-                                    </Setter>
+                                    <Setter TargetName="neonBorder" Property="Opacity" Value="0.9" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="neonBorder" Property="Background" Value="#334155" />
-                                    <Setter TargetName="neonBorder" Property="Effect" Value="{x:Null}" />
+                                    <Setter TargetName="neonBorder" Property="Background" Value="{DynamicResource CardBorderBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Search24" Margin="0,0,8,0" Foreground="#040914" FontSize="16" />
-                        <TextBlock Text="Начать поиск" FontWeight="Bold" FontSize="13" Foreground="#040914" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Search_StartButton}" FontWeight="Bold" FontSize="13" Foreground="#040914" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
@@ -239,7 +227,7 @@
                     </Button.Template>
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Stop24" Margin="0,0,6,0" Foreground="#FF3366" />
-                        <TextBlock Text="Остановить" FontWeight="SemiBold" Foreground="#FF3366" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Search_StopButton}" FontWeight="SemiBold" Foreground="#FF3366" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
@@ -251,7 +239,7 @@
                         Style="{StaticResource CyberGhostButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" FontSize="15" />
-                        <TextBlock Text="Очистить" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Search_ClearButton}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -259,8 +247,8 @@
 
         <!-- STATUS & METRICS HUD STRIP (Linear / Cyber OSINT) -->
         <Border Grid.Row="1"
-                Background="#4D0E111C"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="16,12"
@@ -279,8 +267,8 @@
 
                 <!-- Status Badge with Glowing Dot -->
                 <Border Grid.Column="0"
-                        Background="#26101424"
-                        BorderBrush="#1AFFFFFF"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10"
                         Padding="12,5"
@@ -290,9 +278,6 @@
                         <Ellipse Width="8" Height="8"
                                  Fill="{Binding SessionStatus, Converter={StaticResource StatusToBrush}}"
                                  Margin="0,0,8,0">
-                            <Ellipse.Effect>
-                                <DropShadowEffect Color="#00D2FF" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
-                            </Ellipse.Effect>
                             <Ellipse.Triggers>
                                 <EventTrigger RoutedEvent="Loaded">
                                     <BeginStoryboard>
@@ -310,7 +295,7 @@
                         <TextBlock Text="{Binding SessionStatus}"
                                    FontWeight="Bold"
                                    FontSize="12"
-                                   Foreground="#F1F5F9"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                    VerticalAlignment="Center" />
                         <ui:ProgressRing Width="14" Height="14"
                                          Margin="8,0,0,0"
@@ -321,20 +306,20 @@
 
                 <!-- Elapsed Timer (Monospace) -->
                 <Border Grid.Column="1"
-                        Background="#26101424"
-                        BorderBrush="#1AFFFFFF"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10"
                         Padding="12,5"
                         Margin="0,0,16,0"
                         VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ui:SymbolIcon Symbol="Timer24" Margin="0,0,7,0" FontSize="14" Foreground="#00D2FF" />
-                        <TextBlock Text="ВРЕМЯ: " Foreground="#64748B" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Timer24" Margin="0,0,7,0" FontSize="14" Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Text="ВРЕМЯ: " Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
                         <TextBlock Text="{Binding ElapsedTime}"
                                    FontWeight="Bold"
                                    FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                                   Foreground="#00D2FF"
+                                   Foreground="{DynamicResource AccentBrush}"
                                    FontSize="13"
                                    VerticalAlignment="Center" />
                     </StackPanel>
@@ -461,15 +446,15 @@
                         <ControlTemplate TargetType="ToggleButton">
                             <Border x:Name="toggleBorder"
                                     Width="36" Height="36"
-                                    Background="#26141826"
-                                    BorderBrush="#26FFFFFF"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10">
                                 <Grid>
                                     <ui:SymbolIcon x:Name="plusIcon"
                                                    Symbol="Add24"
                                                    FontSize="18"
-                                                   Foreground="#94A3B8"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
                                                    RenderTransformOrigin="0.5,0.5">
                                         <ui:SymbolIcon.RenderTransform>
                                             <RotateTransform Angle="0" />
@@ -479,14 +464,14 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="toggleBorder" Property="Background" Value="#3320263B" />
-                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#4D00D2FF" />
-                                    <Setter TargetName="plusIcon" Property="Foreground" Value="#00D2FF" />
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                    <Setter TargetName="plusIcon" Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                 </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="toggleBorder" Property="Background" Value="#2A00D2FF" />
-                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#00D2FF" />
-                                    <Setter TargetName="plusIcon" Property="Foreground" Value="#00D2FF" />
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                    <Setter TargetName="plusIcon" Property="Foreground" Value="{DynamicResource AccentBrush}" />
                                     <Setter TargetName="toggleBorder" Property="Effect">
                                         <Setter.Value>
                                             <DropShadowEffect Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
@@ -580,32 +565,32 @@
                     </Border.Style>
 
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="Все находки"
+                        <RadioButton Content="{DynamicResource Search_FilterAll}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=All, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="All"
                                      Style="{StaticResource CyberFilterChipStyle}" />
-                        <RadioButton Content="DNS записи"
+                        <RadioButton Content="{DynamicResource Search_FilterDNS}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=DNS, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="DNS"
                                      Style="{StaticResource CyberFilterChipStyle}" />
-                        <RadioButton Content="WHOIS данные"
+                        <RadioButton Content="{DynamicResource Search_FilterWhois}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Whois, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="Whois"
                                      Style="{StaticResource CyberFilterChipStyle}" />
-                        <RadioButton Content="Поддомены"
+                        <RadioButton Content="{DynamicResource Search_FilterSubdomains}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Subdomains, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="Subdomains"
                                      Style="{StaticResource CyberFilterChipStyle}" />
-                        <RadioButton Content="Веб-стек"
+                        <RadioButton Content="{DynamicResource Search_FilterTech}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Tech, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="Tech"
                                      Style="{StaticResource CyberFilterChipStyle}" />
-                        <RadioButton Content="Прочее"
+                        <RadioButton Content="{DynamicResource Search_FilterOther}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Other, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="Other"
@@ -617,13 +602,14 @@
             <!-- Quick Filter / Search inside findings -->
             <ui:TextBox Grid.Column="1"
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                        PlaceholderText="Фильтрация находок (IP, хост, тип, провайдер)..."
+                        PlaceholderText="{DynamicResource Search_FilterPlaceholder}"
                         Icon="{ui:SymbolIcon Filter24}"
                         HorizontalAlignment="Right"
                         Width="340"
                         Height="36"
-                        BorderBrush="#1AFFFFFF"
-                        Background="#33090B12"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
+                        Background="{DynamicResource AppBackgroundBrush}"
+                        Foreground="{DynamicResource PrimaryTextBrush}"
                         FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                         FontSize="12" />
         </Grid>
@@ -631,29 +617,29 @@
         <!-- FINDINGS FEED LIST (WITH SMOOTH FADE-IN ANIMATION) -->
         <Grid Grid.Row="3">
             <!-- Empty state when no findings -->
-            <Border Background="#330F121C"
-                    BorderBrush="#1AFFFFFF"
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="48"
                     Visibility="{Binding Findings.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid Margin="0,0,0,18">
-                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="#334155" />
-                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="#00D2FF" Opacity="0.3">
+                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="{DynamicResource SecondaryTextBrush}" Opacity="0.4" />
+                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="{DynamicResource AccentBrush}" Opacity="0.3">
                             <ui:SymbolIcon.Effect>
                                 <DropShadowEffect Color="#00D2FF" BlurRadius="30" ShadowDepth="0" Opacity="0.4" />
                             </ui:SymbolIcon.Effect>
                         </ui:SymbolIcon>
                     </Grid>
-                    <TextBlock Text="Ожидание поисковой сессии"
+                    <TextBlock Text="{DynamicResource Search_EmptyTitle}"
                                FontSize="17"
                                FontWeight="Bold"
-                               Foreground="#E2E8F0"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,6" />
-                    <TextBlock Text="Укажите целевой домен или IP-адрес и активируйте поиск для потокового приёма разведданных в реальном времени."
-                               Foreground="#64748B"
+                    <TextBlock Text="{DynamicResource Search_EmptyDesc}"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="13"
                                TextAlignment="Center"
                                MaxWidth="480"
@@ -673,12 +659,11 @@
                                     Margin="0,0,0,10">
                                 <Border.Style>
                                     <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#6610131F" />
-                                        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+                                        <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#80141829" />
-                                                <Setter Property="BorderBrush" Value="#4D00D2FF" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                 <Setter Property="Effect">
                                                     <Setter.Value>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.25" />
@@ -1298,15 +1283,15 @@
                                             </Style>
                                         </StackPanel.Style>
 
-                                        <Border Background="#0C101A"
-                                                BorderBrush="#1AFFFFFF"
+                                        <Border Background="{DynamicResource AppBackgroundBrush}"
+                                                BorderBrush="{DynamicResource CardBorderBrush}"
                                                 BorderThickness="1"
                                                 CornerRadius="6"
                                                 Padding="10,8">
                                             <TextBlock Text="{Binding RawJson}"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxHeight="50"
-                                                       Foreground="#94A3B8"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                                        FontSize="11" />
                                         </Border>
@@ -1314,8 +1299,8 @@
 
                                     <!-- BOTTOM ROW: COLLAPSIBLE RAW JSON VIEWER (Obsidian Glass) -->
                                     <Border Grid.Row="2"
-                                            Background="#9906080F"
-                                            BorderBrush="#1AFFFFFF"
+                                            Background="{DynamicResource AppBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8"
                                             Padding="12"
@@ -1330,9 +1315,9 @@
                                             <!-- Raw JSON Action Bar -->
                                             <Grid Grid.Row="0" Margin="0,0,0,8">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,6,0" />
+                                                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" Margin="0,0,6,0" />
                                                     <TextBlock Text="RAW PAYLOAD (JSON):"
-                                                               Foreground="#64748B"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
                                                                FontSize="10"
                                                                FontWeight="Bold" />
                                                 </StackPanel>
@@ -1343,7 +1328,7 @@
                                                         FontSize="11"
                                                         Style="{StaticResource CyberGhostButtonStyle}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <ui:SymbolIcon Symbol="Copy24" Margin="0,0,5,0" FontSize="13" Foreground="#00D2FF" />
+                                                        <ui:SymbolIcon Symbol="Copy24" Margin="0,0,5,0" FontSize="13" Foreground="{DynamicResource AccentBrush}" />
                                                         <TextBlock Text="Скопировать" FontFamily="JetBrains Mono, Cascadia Code, Consolas" VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
@@ -1358,7 +1343,7 @@
                                                      VerticalScrollBarVisibility="Auto"
                                                      Background="Transparent"
                                                      BorderThickness="0"
-                                                     Foreground="#38BDF8"
+                                                     Foreground="{DynamicResource AccentBrush}"
                                                      FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                                      FontSize="12" />
                                         </Grid>

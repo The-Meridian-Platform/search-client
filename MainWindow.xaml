@@ -9,10 +9,11 @@
         xmlns:conv="clr-namespace:MeridianClient.Converters"
         mc:Ignorable="d"
         Title="Meridian Search Platform — Cyber OSINT"
-        WindowBackdropType="Mica"
+        WindowBackdropType="None"
         ExtendsContentIntoTitleBar="True"
         WindowCornerPreference="Round"
-        Background="Transparent"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         Height="900" Width="1280"
         MinHeight="660" MinWidth="1020"
         WindowStartupLocation="CenterScreen">
@@ -25,6 +26,9 @@
         <!-- DataTemplates to connect ViewModels with their Views -->
         <DataTemplate DataType="{x:Type vm:SearchViewModel}">
             <views:SearchView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GraphViewModel}">
+            <views:GraphView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:HistoryViewModel}">
             <views:HistoryView />
@@ -41,7 +45,7 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#94A3B8" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Padding" Value="14,10" />
@@ -74,21 +78,17 @@
                                         Width="3"
                                         Height="18"
                                         CornerRadius="2"
-                                        Background="#00D2FF"
+                                        Background="{DynamicResource AccentBrush}"
                                         Opacity="0"
                                         HorizontalAlignment="Right"
-                                        VerticalAlignment="Center">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
-                                    </Border.Effect>
-                                </Border>
+                                        VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#1AFFFFFF" />
-                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="#2AFFFFFF" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -111,15 +111,11 @@
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#2600D2FF" />
-                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="#4D00D2FF" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                 <Setter TargetName="activeIndicator" Property="Opacity" Value="1" />
-                                <Setter TargetName="btnBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.3" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="activeIndicator" Property="Background" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -128,7 +124,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="#B308090E">
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <!-- Custom TitleBar -->
             <RowDefinition Height="Auto" />
@@ -136,47 +132,82 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- TITLE BAR -->
+        <!-- TITLE BAR WITH BACKEND STATUS BADGE -->
         <ui:TitleBar Grid.Row="0"
-                     Title="Meridian Cyber OSINT Platform"
                      ShowMaximize="True"
                      ShowMinimize="True"
                      Background="Transparent">
             <ui:TitleBar.Header>
-                <StackPanel Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
-                    <Border Background="#1A00D2FF"
-                            BorderBrush="#4D00D2FF"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="7,2"
-                            Margin="0,0,10,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="headerDot" Width="6" Height="6" Fill="#00D2FF" Margin="0,0,6,0" VerticalAlignment="Center">
-                                <Ellipse.Effect>
-                                    <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
-                                </Ellipse.Effect>
-                                <Ellipse.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1.0" Duration="0:0:1.2" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </Ellipse.Triggers>
-                            </Ellipse>
-                            <TextBlock Text="CYBER OSINT"
-                                       FontSize="10"
-                                       FontWeight="Black"
-                                       Foreground="#00D2FF" />
-                        </StackPanel>
-                    </Border>
-                    <TextBlock Text="Meridian Search Platform"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Foreground="#E2E8F0"
-                               VerticalAlignment="Center" />
-                </StackPanel>
+                <Button Command="{Binding CheckHealthCommand}"
+                        Margin="12,0,0,0"
+                        Padding="0"
+                        Cursor="Hand"
+                        ToolTip="Нажмите для мгновенной проверки соединения с бэкендом"
+                        VerticalAlignment="Center">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="topHealthBadge"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="10,4">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!-- Animated Pulsing Health Dot -->
+                                    <Grid Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Ellipse Width="7" Height="7"
+                                                 Fill="{Binding Health.IsHealthy, Converter={StaticResource BoolToBrush}}">
+                                            <Ellipse.Effect>
+                                                <DropShadowEffect Color="#00E599" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
+                                            </Ellipse.Effect>
+                                            <Ellipse.Triggers>
+                                                <EventTrigger RoutedEvent="Loaded">
+                                                    <BeginStoryboard>
+                                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="1.0" Duration="0:0:1.0">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <SineEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Ellipse.Triggers>
+                                        </Ellipse>
+                                    </Grid>
+
+                                    <!-- Status Text (ONLINE 3ms / OFFLINE) -->
+                                    <TextBlock Text="{Binding Health.StatusText}"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="{Binding Health.IsHealthy, Converter={StaticResource BoolToBrush}}"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Separator Dot -->
+                                    <TextBlock Text="•" Margin="8,0" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" Opacity="0.5" VerticalAlignment="Center" />
+
+                                    <!-- Backend URL display -->
+                                    <TextBlock Text="{Binding Settings.BackendUrl}"
+                                               FontSize="11"
+                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               VerticalAlignment="Center" />
+
+                                    <ui:ProgressRing Width="11" Height="11"
+                                                     Margin="8,0,0,0"
+                                                     IsIndeterminate="True"
+                                                     Visibility="{Binding Health.IsChecking, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="topHealthBadge" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                    <Setter TargetName="topHealthBadge" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
@@ -191,8 +222,8 @@
 
             <!-- SIDEBAR (Linear / Raycast Style) -->
             <Border Grid.Column="0"
-                    Background="#800D0F18"
-                    BorderBrush="#1AFFFFFF"
+                    Background="{DynamicResource SidebarBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
                     BorderThickness="0,0,1,0">
                 <Grid Margin="14,18">
                     <Grid.RowDefinitions>
@@ -211,7 +242,7 @@
                             <Grid Margin="0,0,10,0">
                                 <ui:SymbolIcon Symbol="Radar20"
                                                FontSize="22"
-                                               Foreground="#00D2FF">
+                                               Foreground="{DynamicResource AccentBrush}">
                                     <ui:SymbolIcon.Effect>
                                         <DropShadowEffect Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.8" />
                                     </ui:SymbolIcon.Effect>
@@ -233,12 +264,12 @@
                             <TextBlock Text="MERIDIAN"
                                        FontSize="18"
                                        FontWeight="Black"
-                                       Foreground="#F8FAFC"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Text="Advanced Reconnaissance Intelligence"
+                        <TextBlock Text="{DynamicResource Branding_Subtitle}"
                                    FontSize="10"
-                                   Foreground="#64748B" />
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
                     </StackPanel>
 
                     <!-- NAVIGATION BUTTONS -->
@@ -250,8 +281,20 @@
                                      CommandParameter="Search"
                                      Style="{StaticResource CyberNavButtonStyle}">
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="Search24" Margin="0,0,12,0" FontSize="18" Foreground="#00D2FF" />
-                                <TextBlock Text="Поиск целей" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Search24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Nav_Search}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Graph Tab Button -->
+                        <RadioButton Height="44"
+                                     IsChecked="{Binding CurrentTab, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Graph, Mode=OneWay}"
+                                     Command="{Binding NavigateToCommand}"
+                                     CommandParameter="Graph"
+                                     Style="{StaticResource CyberNavButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="BranchFork24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Nav_Graph}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
 
@@ -262,8 +305,8 @@
                                      CommandParameter="History"
                                      Style="{StaticResource CyberNavButtonStyle}">
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="History24" Margin="0,0,12,0" FontSize="18" Foreground="#A855F7" />
-                                <TextBlock Text="История сессий" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="History24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Nav_History}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
 
@@ -274,8 +317,8 @@
                                      CommandParameter="Logs"
                                      Style="{StaticResource CyberNavButtonStyle}">
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="DocumentBulletList24" Margin="0,0,12,0" FontSize="18" Foreground="#38BDF8" />
-                                <TextBlock Text="Журнал логов" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="DocumentBulletList24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Nav_Logs}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
 
@@ -286,82 +329,11 @@
                                      CommandParameter="Settings"
                                      Style="{StaticResource CyberNavButtonStyle}">
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="Settings24" Margin="0,0,12,0" FontSize="18" Foreground="#00E599" />
-                                <TextBlock Text="Настройки" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Settings24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Nav_Settings}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                     </StackPanel>
-
-                    <!-- FOOTER: Periodic Health Status & Latency Pill -->
-                    <Button Grid.Row="2"
-                            Command="{Binding CheckHealthCommand}"
-                            ToolTip="Нажмите для мгновенной проверки соединения с бэкендом"
-                            Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="healthBorder"
-                                        Background="#33101422"
-                                        BorderBrush="#1AFFFFFF"
-                                        BorderThickness="1"
-                                        CornerRadius="10"
-                                        Padding="12,10">
-                                    <Grid>
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <!-- Animated Pulsing Health Dot -->
-                                                <Grid Margin="0,0,7,0" VerticalAlignment="Center">
-                                                    <Ellipse Width="8" Height="8"
-                                                             Fill="{Binding Health.IsHealthy, Converter={StaticResource BoolToBrush}}">
-                                                        <Ellipse.Effect>
-                                                            <DropShadowEffect Color="#00E599" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
-                                                        </Ellipse.Effect>
-                                                        <Ellipse.Triggers>
-                                                            <EventTrigger RoutedEvent="Loaded">
-                                                                <BeginStoryboard>
-                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="1.0" Duration="0:0:1.0">
-                                                                            <DoubleAnimation.EasingFunction>
-                                                                                <SineEase EasingMode="EaseInOut" />
-                                                                            </DoubleAnimation.EasingFunction>
-                                                                        </DoubleAnimation>
-                                                                    </Storyboard>
-                                                                </BeginStoryboard>
-                                                            </EventTrigger>
-                                                        </Ellipse.Triggers>
-                                                    </Ellipse>
-                                                </Grid>
-
-                                                <!-- Status Text (ONLINE 3ms / OFFLINE) -->
-                                                <TextBlock Text="{Binding Health.StatusText}"
-                                                           FontSize="10"
-                                                           FontWeight="Bold"
-                                                           Foreground="{Binding Health.IsHealthy, Converter={StaticResource BoolToBrush}}"
-                                                           VerticalAlignment="Center" />
-
-                                                <ui:ProgressRing Width="11" Height="11"
-                                                                 Margin="6,0,0,0"
-                                                                 IsIndeterminate="True"
-                                                                 Visibility="{Binding Health.IsChecking, Converter={StaticResource BoolToVis}}" />
-                                            </StackPanel>
-
-                                            <!-- Backend URL display -->
-                                            <TextBlock Text="{Binding Settings.BackendUrl}"
-                                                       FontSize="11"
-                                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                                                       Foreground="#94A3B8"
-                                                       TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="healthBorder" Property="Background" Value="#4D161C30" />
-                                        <Setter TargetName="healthBorder" Property="BorderBrush" Value="#4D00D2FF" />
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
                 </Grid>
             </Border>
 

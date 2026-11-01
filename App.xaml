@@ -8,6 +8,17 @@
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Dynamic Theme-Aware Brushes (defaults for Cyber Dark) -->
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0B0F17" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#111827" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#0E1420" />
+            <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="SecondaryTextBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#06B6D4" />
+            <SolidColorBrush x:Key="SubtleAccentBrush" Color="#1C06B6D4" />
+            <SolidColorBrush x:Key="BorderAccentBrush" Color="#5A06B6D4" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

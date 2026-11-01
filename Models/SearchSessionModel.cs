@@ -54,6 +54,11 @@ public class SearchSessionModel
     [JsonIgnore]
     public string FormattedDuration => GetDurationText(StartedAt ?? CreatedAt, FinishedAt);
 
+    [JsonIgnore]
+    public string FormattedTitle => !string.IsNullOrEmpty(EffectiveTarget)
+        ? $"{EffectiveTarget} ({Status}) [{EffectiveId[..Math.Min(6, EffectiveId.Length)]}]"
+        : $"Сессия [{EffectiveId[..Math.Min(6, EffectiveId.Length)]}]";
+
     public static string FormatIsoTimestamp(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return "—";

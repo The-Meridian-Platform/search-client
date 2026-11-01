@@ -13,14 +13,55 @@
     <UserControl.Resources>
         <conv:BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:StringNullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
+        <conv:StringEqualsToBooleanConverter x:Key="StringEqualsToBool" />
 
-        <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#261A1D2C" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+        <!-- Cyber Segmented / Option RadioButton Style -->
+        <Style x:Key="CyberOptionButtonStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="optBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="optBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="optBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="optBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -29,15 +70,15 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10"
+                                CornerRadius="8"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ghostBorder" Property="Background" Value="#3D252B40" />
-                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="#33FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter TargetName="ghostBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -46,221 +87,513 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="24,20,24,24">
-        <Grid.RenderTransform>
-            <TranslateTransform Y="0" />
-        </Grid.RenderTransform>
-        <Grid.Triggers>
-            <EventTrigger RoutedEvent="Loaded">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.25">
-                            <DoubleAnimation.EasingFunction>
-                                <CubicEase EasingMode="EaseOut" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="12" To="0" Duration="0:0:0.25">
-                            <DoubleAnimation.EasingFunction>
-                                <CubicEase EasingMode="EaseOut" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-        </Grid.Triggers>
-        <Grid.RowDefinitions>
-            <!-- Header -->
-            <RowDefinition Height="Auto" />
-            <!-- Settings Card -->
-            <RowDefinition Height="Auto" />
-            <!-- Actions & Results -->
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24,20,24,24">
+            <Grid.RenderTransform>
+                <TranslateTransform Y="0" />
+            </Grid.RenderTransform>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.25">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="12" To="0" Duration="0:0:0.25">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+            <Grid.RowDefinitions>
+                <!-- Header -->
+                <RowDefinition Height="Auto" />
+                <!-- Settings Card -->
+                <RowDefinition Height="Auto" />
+                <!-- Actions & Results -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <!-- HEADER -->
-        <Border Grid.Row="0"
-                Background="#660F121C"
-                BorderBrush="#1AFFFFFF"
-                BorderThickness="1"
-                CornerRadius="10"
-                Padding="18,16"
-                Margin="0,0,0,16">
-            <StackPanel>
-                <TextBlock Text="Конфигурация шлюза Meridian Platform"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Foreground="#F8FAFC" />
-                <TextBlock Text="Сетевые параметры REST API и gRPC HTTP/2 Streaming подключения"
-                           FontSize="12"
-                           Foreground="#64748B"
-                           Margin="0,3,0,0" />
-            </StackPanel>
-        </Border>
+            <!-- HEADER -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="18,16"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Settings_Title}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                    <TextBlock Text="{DynamicResource Settings_Subtitle}"
+                               FontSize="12"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,3,0,0" />
+                </StackPanel>
+            </Border>
 
-        <!-- SETTINGS CARD -->
-        <Border Grid.Row="1"
-                Background="#6610131F"
-                BorderBrush="#1AFFFFFF"
-                BorderThickness="1"
-                CornerRadius="10"
-                Padding="22"
-                Margin="0,0,0,16">
-            <StackPanel>
-                <!-- URL Field -->
-                <TextBlock Text="БАЗОВЫЙ URL БЭКЕНДА:"
-                           FontWeight="Bold"
-                           FontSize="11"
-                           Foreground="#94A3B8"
-                           Margin="0,0,0,8" />
-                <Grid Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+            <!-- SETTINGS CARD -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="22"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <!-- URL Field -->
+                    <TextBlock Text="{DynamicResource Settings_BackendUrl}"
+                               FontWeight="SemiBold"
+                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,0,0,8" />
+                    <!-- Input with Integrated Segmented URL Presets Group -->
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="38"
+                            Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                    <ui:TextBox Grid.Column="0"
-                                Text="{Binding BackendUrl, UpdateSourceTrigger=PropertyChanged}"
-                                PlaceholderText="http://localhost:5168 или https://localhost:7013"
-                                Icon="{ui:SymbolIcon Link24}"
-                                Height="42"
-                                BorderBrush="#1AFFFFFF"
-                                Background="#33090B12"
+                            <ui:TextBox Grid.Column="0"
+                                        Text="{Binding BackendUrl, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="http://localhost:5168 или https://localhost:7013"
+                                        Icon="{ui:SymbolIcon Link24}"
+                                        Height="36"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource PrimaryTextBrush}"
+                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                        FontSize="13"
+                                        VerticalContentAlignment="Center"
+                                        Padding="10,0" />
+
+                            <!-- Segmented Addons Container -->
+                            <Border Grid.Column="1"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    BorderThickness="1,0,0,0"
+                                    Padding="4,3">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="HTTP (5168)"
+                                            Height="30"
+                                            Padding="12,0"
+                                            Margin="0,0,4,0"
+                                            Command="{Binding SelectPresetHttpCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="{DynamicResource SecondaryTextBrush}"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="pBtn" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="pBtn" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <Button Content="HTTPS (7013)"
+                                            Height="30"
+                                            Padding="12,0"
+                                            Command="{Binding SelectPresetHttpsCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="{DynamicResource SecondaryTextBrush}"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="pBtn" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="pBtn" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- HTTP/2 Switch (Cleanly aligned) -->
+                    <CheckBox Content="{DynamicResource Settings_AllowHttp2}"
+                              IsChecked="{Binding AllowUnencryptedHttp2}"
+                              Margin="0,0,0,16"
+                              FontSize="13"
+                              VerticalContentAlignment="Center"
+                              Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    <!-- Timeout -->
+                    <TextBlock Text="{DynamicResource Settings_Timeout}"
+                               FontWeight="SemiBold"
+                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,0,0,8" />
+                    <ui:TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
+                                Width="160"
+                                HorizontalAlignment="Left"
+                                Height="38"
+                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                Background="{DynamicResource AppBackgroundBrush}"
+                                Foreground="{DynamicResource PrimaryTextBrush}"
                                 FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                 FontSize="13"
-                                Margin="0,0,10,0" />
+                                VerticalContentAlignment="Center"
+                                Padding="10,0"
+                                Margin="0,0,0,24" />
 
-                    <!-- Preset HTTP (5168) -->
-                    <Button Grid.Column="1"
-                            Content="HTTP (5168)"
-                            Margin="0,0,8,0"
-                            Padding="16,0"
-                            Height="42"
-                            Command="{Binding SelectPresetHttpCommand}"
-                            Style="{StaticResource CyberGhostButtonStyle}" />
+                    <!-- APPEARANCE & LOCALIZATION SECTION -->
+                    <Border Height="1" Background="{DynamicResource CardBorderBrush}" Margin="0,0,0,20" />
 
-                    <!-- Preset HTTPS (7013) -->
-                    <Button Grid.Column="2"
-                            Content="HTTPS (7013)"
-                            Padding="16,0"
-                            Height="42"
-                            Command="{Binding SelectPresetHttpsCommand}"
-                            Style="{StaticResource CyberGhostButtonStyle}" />
-                </Grid>
-
-                <!-- HTTP/2 Switch -->
-                <CheckBox Content="Разрешить незашифрованный HTTP/2 (SocketsHttpHandler.Http2UnencryptedSupport)"
-                          IsChecked="{Binding AllowUnencryptedHttp2}"
-                          Margin="0,0,0,16"
-                          FontSize="13"
-                          Foreground="#CBD5E1" />
-
-                <!-- Timeout -->
-                <TextBlock Text="ТАЙМАУТ СЕТЕВЫХ ЗАПРОСОВ (СЕК):"
-                           FontWeight="Bold"
-                           FontSize="11"
-                           Foreground="#94A3B8"
-                           Margin="0,0,0,8" />
-                <ui:TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
-                            Width="160"
-                            HorizontalAlignment="Left"
-                            Height="38"
-                            BorderBrush="#1AFFFFFF"
-                            Background="#33090B12"
-                            FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                            FontSize="13"
-                            Margin="0,0,0,24" />
-
-                <!-- Action Buttons: Save & Test Connection -->
-                <StackPanel Orientation="Horizontal">
-                    <!-- Neon Cyan Save Button -->
-                    <Button Height="40"
-                            Padding="22,0"
-                            Margin="0,0,12,0"
-                            Command="{Binding SaveSettingsCommand}"
-                            Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="saveBorder"
-                                        Background="#00D2FF"
-                                        CornerRadius="10"
-                                        Padding="{TemplateBinding Padding}">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="18" ShadowDepth="0" Opacity="0.6" />
-                                    </Border.Effect>
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="saveBorder" Property="Background" Value="#33DDFF" />
-                                        <Setter TargetName="saveBorder" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#00D2FF" BlurRadius="26" ShadowDepth="0" Opacity="0.85" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Save24" Margin="0,0,8,0" Foreground="#040914" FontSize="15" />
-                            <TextBlock Text="Сохранить настройки" FontWeight="Bold" Foreground="#040914" FontSize="13" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Test Connection Ghost Button -->
-                    <Button Height="40"
-                            Padding="18,0"
-                            Command="{Binding TestConnectionCommand}"
-                            IsEnabled="{Binding IsTesting, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
-                            Style="{StaticResource CyberGhostButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Checkmark24" Margin="0,0,8,0" Foreground="#00E599" FontSize="15" />
-                            <TextBlock Text="Проверить соединение" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <ui:ProgressRing Width="20" Height="20"
-                                     IsIndeterminate="True"
-                                     Margin="14,0,0,0"
-                                     Visibility="{Binding IsTesting, Converter={StaticResource BoolToVis}}" />
-                </StackPanel>
-
-                <!-- Saved Status Feedback with Neon Green -->
-                <TextBlock Text="{Binding SavedStatus}"
-                           Foreground="#00E599"
-                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                           FontWeight="SemiBold"
-                           FontSize="12"
-                           Margin="0,12,0,0"
-                           Visibility="{Binding SavedStatus, Converter={StaticResource NotEmptyToVis}}" />
-            </StackPanel>
-        </Border>
-
-        <!-- DIAGNOSTIC RESULT CARD -->
-        <Border Grid.Row="2"
-                Background="#6610131F"
-                BorderBrush="#1AFFFFFF"
-                BorderThickness="1"
-                CornerRadius="10"
-                Padding="16"
-                Visibility="{Binding TestResult, Converter={StaticResource NotEmptyToVis}}">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <ui:SymbolIcon Symbol="Info24"
-                                   Foreground="#00D2FF"
-                                   Margin="0,0,8,0" />
-                    <TextBlock Text="ДИАГНОСТИКА СОЕДИНЕНИЯ:"
+                    <!-- Subtle Uppercase Muted Header -->
+                    <TextBlock Text="{DynamicResource Settings_Appearance_Header}"
                                FontWeight="Bold"
                                FontSize="11"
-                               Foreground="#CBD5E1" />
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Opacity="0.85"
+                               Margin="0,0,0,16" />
+
+                    <!-- Theme Selection Dropdown Menu -->
+                    <TextBlock Text="{DynamicResource Settings_Theme_Preset}"
+                               FontWeight="SemiBold"
+                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,0,0,8" />
+                    <ComboBox ItemsSource="{Binding AvailableThemeOptions}"
+                              SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}"
+                              DisplayMemberPath="Title"
+                              Height="38"
+                              Width="320"
+                              HorizontalAlignment="Left"
+                              VerticalContentAlignment="Center"
+                              Background="{DynamicResource AppBackgroundBrush}"
+                              Foreground="{DynamicResource PrimaryTextBrush}"
+                              BorderBrush="{DynamicResource CardBorderBrush}"
+                              Margin="0,0,0,18" />
+
+                    <!-- CUSTOM THEME COLOR PICKERS (Displayed when Custom is selected) -->
+                    <Border Visibility="{Binding IsCustomThemeSelected, Converter={StaticResource BoolToVis}}"
+                            Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Settings_Theme_Custom}"
+                                       FontWeight="Bold"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Opacity="0.85"
+                                       Margin="0,0,0,12" />
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Background Color -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
+                                    <TextBlock Text="{DynamicResource Settings_Theme_BgColor}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Margin="0,0,0,6" />
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Height="38">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PickCustomBgColorCommand}"
+                                                    Padding="0" Margin="6,0,0,0"
+                                                    Width="26" Height="26"
+                                                    VerticalAlignment="Center"
+                                                    Cursor="Hand"
+                                                    ToolTip="Нажмите, чтобы открыть палитру цветов">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border CornerRadius="5"
+                                                                Background="{Binding CustomBgColor}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1" />
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <ui:TextBox Grid.Column="1"
+                                                        Text="{Binding CustomBgColor, UpdateSourceTrigger=PropertyChanged}"
+                                                        Height="36"
+                                                        BorderThickness="0"
+                                                        Background="Transparent"
+                                                        Foreground="{DynamicResource PrimaryTextBrush}"
+                                                        VerticalContentAlignment="Center"
+                                                        Padding="8,0"
+                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Card Color -->
+                                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,12">
+                                    <TextBlock Text="{DynamicResource Settings_Theme_CardColor}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Margin="0,0,0,6" />
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Height="38">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PickCustomCardColorCommand}"
+                                                    Padding="0" Margin="6,0,0,0"
+                                                    Width="26" Height="26"
+                                                    VerticalAlignment="Center"
+                                                    Cursor="Hand"
+                                                    ToolTip="Нажмите, чтобы открыть палитру цветов">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border CornerRadius="5"
+                                                                Background="{Binding CustomCardColor}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1" />
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <ui:TextBox Grid.Column="1"
+                                                        Text="{Binding CustomCardColor, UpdateSourceTrigger=PropertyChanged}"
+                                                        Height="36"
+                                                        BorderThickness="0"
+                                                        Background="Transparent"
+                                                        Foreground="{DynamicResource PrimaryTextBrush}"
+                                                        VerticalContentAlignment="Center"
+                                                        Padding="8,0"
+                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Foreground Color -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{DynamicResource Settings_Theme_FgColor}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Margin="0,0,0,6" />
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Height="38">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PickCustomFgColorCommand}"
+                                                    Padding="0" Margin="6,0,0,0"
+                                                    Width="26" Height="26"
+                                                    VerticalAlignment="Center"
+                                                    Cursor="Hand"
+                                                    ToolTip="Нажмите, чтобы открыть палитру цветов">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border CornerRadius="5"
+                                                                Background="{Binding CustomFgColor}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1" />
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <ui:TextBox Grid.Column="1"
+                                                        Text="{Binding CustomFgColor, UpdateSourceTrigger=PropertyChanged}"
+                                                        Height="36"
+                                                        BorderThickness="0"
+                                                        Background="Transparent"
+                                                        Foreground="{DynamicResource PrimaryTextBrush}"
+                                                        VerticalContentAlignment="Center"
+                                                        Padding="8,0"
+                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Accent Color -->
+                                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,0">
+                                    <TextBlock Text="{DynamicResource Settings_Theme_AccentColor}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Margin="0,0,0,6" />
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Height="38">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PickCustomAccentColorCommand}"
+                                                    Padding="0" Margin="6,0,0,0"
+                                                    Width="26" Height="26"
+                                                    VerticalAlignment="Center"
+                                                    Cursor="Hand"
+                                                    ToolTip="Нажмите, чтобы открыть палитру цветов">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border CornerRadius="5"
+                                                                Background="{Binding CustomAccentColor}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1" />
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <ui:TextBox Grid.Column="1"
+                                                        Text="{Binding CustomAccentColor, UpdateSourceTrigger=PropertyChanged}"
+                                                        Height="36"
+                                                        BorderThickness="0"
+                                                        Background="Transparent"
+                                                        Foreground="{DynamicResource PrimaryTextBrush}"
+                                                        VerticalContentAlignment="Center"
+                                                        Padding="8,0"
+                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Language Selection (RU / EN) -->
+                    <TextBlock Text="{DynamicResource Settings_Language_Label}"
+                               FontWeight="Bold"
+                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Margin="0,0,0,8" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                        <RadioButton Content="{DynamicResource Settings_Language_Ru}"
+                                     IsChecked="{Binding SelectedLanguage, Converter={StaticResource StringEqualsToBool}, ConverterParameter=ru, Mode=TwoWay}"
+                                     GroupName="AppLangOptions"
+                                     Style="{StaticResource CyberOptionButtonStyle}"
+                                     Margin="0,0,10,0" />
+                        <RadioButton Content="{DynamicResource Settings_Language_En}"
+                                     IsChecked="{Binding SelectedLanguage, Converter={StaticResource StringEqualsToBool}, ConverterParameter=en, Mode=TwoWay}"
+                                     GroupName="AppLangOptions"
+                                     Style="{StaticResource CyberOptionButtonStyle}" />
+                    </StackPanel>
+
+                    <!-- Connection Test & Auto-Save Indicator (No manual save button!) -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Test Connection Ghost Button -->
+                        <Button Height="40"
+                                Padding="18,0"
+                                Command="{Binding TestConnectionCommand}"
+                                IsEnabled="{Binding IsTesting, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
+                                Style="{StaticResource CyberGhostButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Checkmark24" Margin="0,0,8,0" Foreground="{DynamicResource AccentBrush}" FontSize="15" />
+                                <TextBlock Text="{DynamicResource Settings_TestBtn}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <ui:ProgressRing Width="20" Height="20"
+                                         IsIndeterminate="True"
+                                         Margin="14,0,0,0"
+                                         Visibility="{Binding IsTesting, Converter={StaticResource BoolToVis}}" />
+
+                        <TextBlock Text="⚡ Автосохранение включено"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   FontSize="11"
+                                   FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                   Margin="20,0,0,0" />
+                    </StackPanel>
                 </StackPanel>
-                <TextBlock Text="{Binding TestResult}"
-                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                           FontSize="12"
-                           Foreground="#94A3B8"
-                           TextWrapping="Wrap" />
-            </StackPanel>
-        </Border>
-    </Grid>
+            </Border>
+
+            <!-- DIAGNOSTIC RESULT CARD -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="16"
+                    Visibility="{Binding TestResult, Converter={StaticResource NotEmptyToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <ui:SymbolIcon Symbol="Info24"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       Margin="0,0,8,0" />
+                        <TextBlock Text="{DynamicResource Settings_DiagHeader}"
+                                   FontWeight="Bold"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding TestResult}"
+                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                               FontSize="12"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

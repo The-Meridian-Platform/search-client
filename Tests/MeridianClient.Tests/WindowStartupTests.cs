@@ -19,9 +19,11 @@ public class WindowStartupTests
                 var healthService = new Services.HealthCheckService(settingsService, logService);
                 var searchVm = new SearchViewModel(new SearchViewModelTests.DummyApiClient(), new SearchViewModelTests.DummyStreamClient(), logService);
                 var histVm = new HistoryViewModel(new SearchViewModelTests.DummyApiClient());
+                var invService = new Services.InvestigationService(logService);
+                var graphVm = new GraphViewModel(searchVm, histVm, new SearchViewModelTests.DummyApiClient(), new SearchViewModelTests.DummyStreamClient(), invService, logService);
                 var logsVm = new LogsViewModel(logService);
-                var setVm = new SettingsViewModel(settingsService, new SearchViewModelTests.DummyApiClient());
-                var mainVm = new MainViewModel(searchVm, histVm, logsVm, setVm, healthService);
+                var setVm = new SettingsViewModel(settingsService, new SearchViewModelTests.DummyApiClient(), Services.ThemeService.Instance, Services.LocalizationService.Instance);
+                var mainVm = new MainViewModel(searchVm, graphVm, histVm, logsVm, setVm, healthService);
 
                 var win = new MainWindow(mainVm);
                 win.Show();

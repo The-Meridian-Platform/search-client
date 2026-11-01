@@ -7,6 +7,7 @@ namespace MeridianClient.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     public SearchViewModel Search { get; }
+    public GraphViewModel Graph { get; }
     public HistoryViewModel History { get; }
     public LogsViewModel Logs { get; }
     public SettingsViewModel Settings { get; }
@@ -16,16 +17,18 @@ public partial class MainViewModel : ObservableObject
     private ObservableObject _currentViewModel;
 
     [ObservableProperty]
-    private string _currentTab = "Search"; // Search, History, Logs, Settings
+    private string _currentTab = "Search"; // Search, Graph, History, Logs, Settings
 
     public MainViewModel(
         SearchViewModel searchViewModel,
+        GraphViewModel graphViewModel,
         HistoryViewModel historyViewModel,
         LogsViewModel logsViewModel,
         SettingsViewModel settingsViewModel,
         IHealthCheckService healthCheckService)
     {
         Search = searchViewModel;
+        Graph = graphViewModel;
         History = historyViewModel;
         Logs = logsViewModel;
         Settings = settingsViewModel;
@@ -53,6 +56,7 @@ public partial class MainViewModel : ObservableObject
         CurrentViewModel = destination switch
         {
             "Search" => Search,
+            "Graph" => Graph,
             "History" => History,
             "Logs" => Logs,
             "Settings" => Settings,
@@ -66,6 +70,14 @@ public partial class MainViewModel : ObservableObject
         else if (destination == "Logs")
         {
             Logs.RefreshFilteredList();
+        }
+        else if (destination == "Graph")
+        {
+            _ = History.LoadHistoryAsync();
+            if (Graph.IsLiveMode)
+            {
+                Graph.SyncFromLiveSearch();
+            }
         }
     }
 }

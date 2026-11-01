@@ -21,18 +21,32 @@ public class BooleanToBrushConverter : IValueConverter
     }
 }
 
+public class InverseBooleanConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return value is bool b ? !b : true;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return value is bool b ? !b : false;
+    }
+}
+
 public class BooleanToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         bool boolVal = value switch
         {
+            null => false,
             bool b => b,
             int i => i > 0,
             long l => l > 0,
             double d => d > 0,
             string s => !string.IsNullOrWhiteSpace(s),
-            _ => false
+            _ => true
         };
 
         if (parameter is string paramStr && paramStr.Equals("Inverse", StringComparison.OrdinalIgnoreCase))
@@ -119,7 +133,11 @@ public class StringEqualsToBooleanConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        if (value is true && parameter != null)
+        {
+            return parameter.ToString()!;
+        }
+        return Binding.DoNothing;
     }
 }
 

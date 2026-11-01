@@ -32,6 +32,9 @@ public partial class LogsViewModel : ObservableObject
     private bool _autoScroll = true;
 
     [ObservableProperty]
+    private bool _isFiltersPanelOpen = true;
+
+    [ObservableProperty]
     private string _statusNotification = string.Empty;
 
     public int TotalCount => _logService.TotalCount;

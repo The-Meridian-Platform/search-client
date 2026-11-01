@@ -35,3 +35,8 @@ appsettings.*.Local.json
 .DS_Store
 Thumbs.db
 desktop.ini
+
+## AI Agent context & memory files
+.agent/
+*.agent.md
+

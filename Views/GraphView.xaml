@@ -1,0 +1,608 @@
+<UserControl x:Class="MeridianClient.Views.GraphView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:MeridianClient.ViewModels"
+             xmlns:conv="clr-namespace:MeridianClient.Converters"
+             xmlns:models="clr-namespace:MeridianClient.Models"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance vm:GraphViewModel}"
+             d:DesignHeight="780" d:DesignWidth="1100">
+
+    <UserControl.Resources>
+        <conv:InverseBooleanConverter x:Key="InverseBool" />
+        <conv:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <conv:StringNullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
+        <conv:StringEqualsToBooleanConverter x:Key="StringEqualsToBool" />
+
+        <!-- Graph Ghost Button Style -->
+        <Style x:Key="GraphGhostButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ghostBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ghostBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <!-- 1. Top Toolbar -->
+            <RowDefinition Height="Auto" />
+            <!-- 2. Graph Workspace & Inspector -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- TOP TOOLBAR -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Left: Session Mode / Dropdown -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Center: Metrics & Target -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Right: Canvas Controls & Search -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Mode Switch & Session Dropdown -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Live Mode Toggle Button -->
+                    <Button Command="{Binding SwitchToLiveModeCommand}"
+                            Height="36"
+                            Padding="12,0"
+                            Margin="0,0,10,0"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="liveBtnBorder"
+                                                    Background="{DynamicResource SubtleAccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Pulse dot -->
+                                                    <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0">
+                                                        <Ellipse.Triggers>
+                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.8" />
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                        </Ellipse.Triggers>
+                                                    </Ellipse>
+                                                    <TextBlock Text="LIVE ПОИСК"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource AccentBrush}"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Investigations Dropdown with Placeholder and Delete Button per Item -->
+                    <Grid Width="230" Height="36" Margin="0,0,4,0">
+                        <ComboBox ItemsSource="{Binding AvailableInvestigations}"
+                                  SelectedItem="{Binding SelectedInvestigation, Mode=TwoWay}"
+                                  Width="230"
+                                  Height="36"
+                                  ToolTip="Сохраненные проекты расследований"
+                                  VerticalContentAlignment="Center"
+                                  Background="{DynamicResource AppBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  BorderBrush="{DynamicResource CardBorderBrush}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding FormattedTitle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                                   Margin="0,0,8,0" />
+                                        <Button Grid.Column="1"
+                                                Command="{Binding DataContext.DeleteInvestigationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Width="22" Height="22"
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                ToolTip="Удалить это расследование">
+                                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Placeholder Text -->
+                        <TextBlock Text="Проекты расследований..."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0,30,0"
+                                   IsHitTestVisible="False"
+                                   Visibility="{Binding SelectedInvestigation, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
+                    </Grid>
+
+                    <!-- Delete Selected Investigation Button -->
+                    <Button Command="{Binding DeleteInvestigationCommand}"
+                            Visibility="{Binding SelectedInvestigation, Converter={StaticResource BoolToVis}}"
+                            Height="36"
+                            Width="36"
+                            Padding="0"
+                            Margin="0,0,8,0"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Удалить выбранное расследование">
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#FF5555" />
+                    </Button>
+
+                    <!-- Session Selector Dropdown with Placeholder -->
+                    <Grid Width="200" Height="36" Margin="0,0,10,0">
+                        <ComboBox ItemsSource="{Binding AvailableSessions}"
+                                  SelectedItem="{Binding SelectedSession, Mode=TwoWay}"
+                                  DisplayMemberPath="FormattedTitle"
+                                  Width="200"
+                                  Height="36"
+                                  ToolTip="Одиночные сессии из истории"
+                                  VerticalContentAlignment="Center"
+                                  Background="{DynamicResource AppBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  BorderBrush="{DynamicResource CardBorderBrush}" />
+
+                        <!-- Placeholder Text -->
+                        <TextBlock Text="Сессии из истории..."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0,30,0"
+                                   IsHitTestVisible="False"
+                                   Visibility="{Binding SelectedSession, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
+                    </Grid>
+
+                    <!-- Target Display Badge -->
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="10,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Target24" FontSize="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding TargetDisplay}"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Center: Metrics Badges & Active Pivot Indicator -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Live Pivot Status Badge -->
+                    <Border Background="{DynamicResource SubtleAccentBrush}"
+                            BorderBrush="{DynamicResource BorderAccentBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0"
+                            Visibility="{Binding IsPivoting, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:ProgressRing Width="12" Height="12" Margin="0,0,8,0" IsIndeterminate="True" />
+                            <TextBlock Text="PIVOT: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding PivotingTarget}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="(+" FontSize="10" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding PivotFindingsCount}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text=")" FontSize="10" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button Command="{Binding CancelPivotCommand}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    Cursor="Hand"
+                                    ToolTip="Остановить Pivot">
+                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="УЗЛОВ: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="{Binding NodesCount}" FontSize="11" FontWeight="Black" Foreground="{DynamicResource AccentBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="СВЯЗЕЙ: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="{Binding EdgesCount}" FontSize="11" FontWeight="Black" Foreground="{DynamicResource PrimaryTextBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right: Node Search & Canvas Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Search Node Box -->
+                    <Border Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Width="180"
+                            Padding="10,0"
+                            Margin="0,0,10,0">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon Symbol="Search24" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,8,0" />
+                            <Grid Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Поиск узла..."
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           Visibility="{Binding NodeSearchText, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
+                                <TextBox Text="{Binding NodeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Foreground="{DynamicResource PrimaryTextBrush}"
+                                         CaretBrush="{DynamicResource AccentBrush}"
+                                         FontSize="12"
+                                         VerticalAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Export Investigation Button -->
+                    <Button Command="{Binding ExportInvestigationCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Экспортировать расследование в файл JSON"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="Save24" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+
+                    <!-- Import Investigation Button -->
+                    <Button Command="{Binding ImportInvestigationCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Импортировать файл расследования (.json)"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="Open24" FontSize="15" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </Button>
+
+                    <!-- Toggle Physics Button -->
+                    <Button Command="{Binding TogglePhysicsCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Пауза / Запуск физики связей"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="PlayCircle24" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+
+                    <!-- Reset Layout Button -->
+                    <Button Command="{Binding ResetLayoutCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Сбросить раскладку по кругу"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="ArrowReset24" FontSize="15" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </Button>
+
+                    <!-- Fit / Center View Button -->
+                    <Button x:Name="btnCenterGraph"
+                            Click="BtnCenterGraph_Click"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Центрировать граф на экране"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="Maximize24" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+
+                    <!-- Clear Canvas Graph Button -->
+                    <Button Command="{Binding ClearCanvasGraphCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Очистить холст расследования">
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="15" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- GRAPH WORKSPACE WITH INTERACTIVE ZOOM/PAN AND NODE DETAILS INSPECTOR -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Main Canvas Viewport -->
+                <ColumnDefinition Width="*" />
+                <!-- Right Slide-out Inspector Panel -->
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Interactive Graph Canvas Viewport -->
+            <Border Grid.Column="0"
+                    x:Name="canvasViewport"
+                    Background="{DynamicResource AppBackgroundBrush}"
+                    ClipToBounds="True"
+                    MouseWheel="CanvasViewport_MouseWheel"
+                    MouseDown="CanvasViewport_MouseDown"
+                    MouseMove="CanvasViewport_MouseMove"
+                    MouseUp="CanvasViewport_MouseUp"
+                    Cursor="Arrow">
+
+                <!-- Inner Scalable / Pannable Surface -->
+                <Canvas x:Name="graphCanvas" Width="5000" Height="5000">
+                    <Canvas.RenderTransform>
+                        <MatrixTransform x:Name="canvasTransform" />
+                    </Canvas.RenderTransform>
+                </Canvas>
+            </Border>
+
+            <!-- Empty State Overlay (When graph has no nodes yet) -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource AppBackgroundBrush}"
+                    Opacity="0.9"
+                    Visibility="{Binding NodesCount, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
+                    IsHitTestVisible="False">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ui:SymbolIcon Symbol="BranchFork24" FontSize="48" Foreground="{DynamicResource SecondaryTextBrush}" Opacity="0.3" Margin="0,0,0,12" />
+                    <TextBlock Text="Граф связей пока пуст"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Запустите поиск во вкладке «Поиск целей» или выберите завершенную сессию из истории сверху."
+                               FontSize="12"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- RIGHT NODE INSPECTOR PANEL -->
+            <Border Grid.Column="1"
+                    Width="340"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1,0,0,0"
+                    Visibility="{Binding HasSelectedNode, Converter={StaticResource BoolToVis}}">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <!-- Node Header -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Properties List -->
+                        <RowDefinition Height="*" />
+                        <!-- Action Buttons -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Node Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <!-- Type Pill -->
+                            <Border Background="{DynamicResource SubtleAccentBrush}"
+                                    BorderBrush="{DynamicResource BorderAccentBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="8,2"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding SelectedNode.IconSymbol, TargetNullValue=Circle24, FallbackValue=Circle24}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding SelectedNode.TypeNameRu}"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Node Label -->
+                            <TextBlock Text="{Binding SelectedNode.Label}"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       TextWrapping="Wrap" />
+
+                            <!-- Node Sublabel -->
+                            <TextBlock Text="{Binding SelectedNode.SubLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,3,0,0" />
+                        </StackPanel>
+
+                        <!-- Close Inspector Button -->
+                        <Button Grid.Column="1"
+                                Command="{Binding ClearSelectionCommand}"
+                                Width="28" Height="28"
+                                Padding="0"
+                                VerticalAlignment="Top"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Cursor="Hand">
+                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Node Properties -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="АТРИБУТЫ УЗЛА:"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,0,0,10" />
+
+                            <ItemsControl ItemsSource="{Binding SelectedNode.Properties}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource AppBackgroundBrush}"
+                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="10,7"
+                                                Margin="0,0,0,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Key}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                                           Margin="0,0,10,0" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Value}"
+                                                           FontSize="11"
+                                                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                                           TextAlignment="Right"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Inspector Actions -->
+                    <StackPanel Grid.Row="2">
+                        <!-- Pivot Search on Node Button -->
+                        <Button Command="{Binding PivotSearchOnNodeCommand}"
+                                Height="38"
+                                Margin="0,0,0,8"
+                                IsEnabled="{Binding IsPivoting, Converter={StaticResource InverseBool}}"
+                                ToolTip="Запустить поиск по этому узлу и добавить новые связи прямо на текущий граф">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                    <Setter Property="Cursor" Value="Hand" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="pivotBorder"
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8"
+                                                        Padding="12,0">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="pivotBorder" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource AppBackgroundBrush}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.6" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsPivoting, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
+                                    <ui:SymbolIcon Symbol="BranchFork24" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Развернуть узел на графе" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsPivoting, Converter={StaticResource BoolToVis}}">
+                                    <ui:ProgressRing Width="14" Height="14" Margin="0,0,8,0" IsIndeterminate="True" />
+                                    <TextBlock Text="Разворачивание..." FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+
+                        <!-- Search Target from Node Button -->
+                        <Button Command="{Binding StartSearchOnNodeCommand}"
+                                Height="38"
+                                Margin="0,0,0,8"
+                                Style="{StaticResource GraphGhostButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Search24" FontSize="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" />
+                                <TextBlock Text="Искать по этой цели в поиске" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Copy Value Button -->
+                        <Button Command="{Binding CopyNodeValueCommand}"
+                                Height="36"
+                                Style="{StaticResource GraphGhostButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,8,0" />
+                                <TextBlock Text="Скопировать значение" FontSize="11" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

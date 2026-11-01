@@ -23,9 +23,13 @@ public partial class SearchViewModel : ObservableObject
     private CancellationTokenSource? _searchCts;
     private readonly Stopwatch _stopwatch = new();
     private readonly DispatcherTimer _timer;
+    private int _searchSessionGeneration;
 
     [ObservableProperty]
     private string _targetInput = "example.com";
+
+    [ObservableProperty]
+    private string _activeTarget = string.Empty;
 
     [ObservableProperty]
     private string _selectedTargetType = "Auto";
@@ -123,8 +127,13 @@ public partial class SearchViewModel : ObservableObject
         }
 
         CancelCurrentSearch();
+        _searchSessionGeneration++;
+        int currentGeneration = _searchSessionGeneration;
+
         _searchCts = new CancellationTokenSource();
         var ct = _searchCts.Token;
+
+        ActiveTarget = TargetInput.Trim();
 
         lock (_findingsLock)
         {
@@ -199,6 +208,7 @@ public partial class SearchViewModel : ObservableObject
     {
         _logService.LogInfo("Search", "Пользователь нажал 'Остановить'");
         CancelCurrentSearch();
+        _searchSessionGeneration++;
         IsRunning = false;
         _stopwatch.Stop();
         _timer.Stop();
@@ -217,6 +227,9 @@ public partial class SearchViewModel : ObservableObject
         {
             StopSearch();
         }
+
+        ActiveTarget = string.Empty;
+        _searchSessionGeneration++;
 
         // 1. Fast sequential "fly away" animation for finding items
         List<FindingItemViewModel> snapshot;
@@ -396,8 +409,15 @@ public partial class SearchViewModel : ObservableObject
                 };
                 var vm = new FindingItemViewModel(model);
 
+                var generationAtDiscovered = _searchSessionGeneration;
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
+                    if (generationAtDiscovered != _searchSessionGeneration)
+                    {
+                        // Discard findings from canceled or previous search session
+                        return;
+                    }
+
                     lock (_findingsLock)
                     {
                         Findings.Add(vm);
@@ -424,9 +444,11 @@ public partial class SearchViewModel : ObservableObject
     public void LoadExistingSession(SearchSessionModel session)
     {
         StopSearch();
+        _searchSessionGeneration++;
 
         CurrentSessionId = session.EffectiveId;
         TargetInput = session.EffectiveTarget;
+        ActiveTarget = session.EffectiveTarget;
         SessionStatus = session.Status;
         StatusMessage = $"Загружена сессия [{session.EffectiveId}] из истории. Статус: {session.Status}";
 

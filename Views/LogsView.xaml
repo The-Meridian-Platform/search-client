@@ -18,14 +18,14 @@
 
         <!-- Neon cyber filter chip style -->
         <Style x:Key="LogFilterChipStyle" TargetType="RadioButton">
-            <Setter Property="Background" Value="#1A151F30" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#94A3B8" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="GroupName" Value="LogLevelFilterGroup" />
             <Setter Property="Template">
@@ -35,25 +35,20 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
+                                CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="chipBorder" Property="Background" Value="#2A22344D" />
-                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#4000D2FF" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="chipBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="chipBorder" Property="Background" Value="#2A00D2FF" />
-                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#00D2FF" />
-                                <Setter Property="Foreground" Value="#00D2FF" />
-                                <Setter TargetName="chipBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="10" ShadowDepth="0" Opacity="0.45" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="chipBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -63,14 +58,14 @@
 
         <!-- Compact Ghost Action Button -->
         <Style x:Key="LogActionButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1F151F30" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Padding" Value="12,6" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -78,15 +73,15 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
+                                CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#332B3C57" />
-                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,8 +125,8 @@
 
         <!-- 1. HEADER BANNER -->
         <Border Grid.Row="0"
-                Background="#200F172A"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="18,14"
@@ -145,44 +140,44 @@
                 <!-- Left: Title & Subtitle -->
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                        <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="18" Foreground="#00D2FF" Margin="0,0,10,0" />
-                        <TextBlock Text="ЖУРНАЛ СОБЫТИЙ СИСТЕМЫ"
+                        <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" />
+                        <TextBlock Text="{DynamicResource Logs_Title}"
                                    FontSize="15"
                                    FontWeight="Bold"
-                                   Foreground="#F8FAFC"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                    VerticalAlignment="Center" />
                         <Border Margin="10,0,0,0"
-                                Background="#1A00D2FF"
-                                BorderBrush="#4000D2FF"
+                                Background="{DynamicResource SubtleAccentBrush}"
+                                BorderBrush="{DynamicResource BorderAccentBrush}"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Padding="8,2">
                             <TextBlock Text="LIVE STREAM"
                                        FontSize="10"
                                        FontWeight="Bold"
-                                       Foreground="#00D2FF" />
+                                       Foreground="{DynamicResource AccentBrush}" />
                         </Border>
                     </StackPanel>
-                    <TextBlock Text="Мониторинг REST API запросов, gRPC HTTP/2 потоков, проверок /health и ошибок движка в реальном времени"
+                    <TextBlock Text="{DynamicResource Logs_Subtitle}"
                                FontSize="11"
-                               Foreground="#64748B" />
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>
 
                 <!-- Right: Neon Metric Badges -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Total Count -->
-                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,0">
+                    <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ВСЕГО: " FontSize="10" FontWeight="Bold" Foreground="#64748B" />
-                            <TextBlock Text="{Binding TotalCount}" FontSize="12" FontWeight="Black" Foreground="#F8FAFC" />
+                            <TextBlock Text="ВСЕГО: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="{Binding TotalCount}" FontSize="12" FontWeight="Black" Foreground="{DynamicResource PrimaryTextBrush}" />
                         </StackPanel>
                     </Border>
 
                     <!-- Info Count -->
-                    <Border Background="#1A00D2FF" BorderBrush="#3300D2FF" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,0">
+                    <Border Background="{DynamicResource SubtleAccentBrush}" BorderBrush="{DynamicResource BorderAccentBrush}" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ИНФО: " FontSize="10" FontWeight="Bold" Foreground="#00D2FF" />
-                            <TextBlock Text="{Binding InfoCount}" FontSize="12" FontWeight="Black" Foreground="#00D2FF" />
+                            <TextBlock Text="ИНФО: " FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="{Binding InfoCount}" FontSize="12" FontWeight="Black" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Border>
 
@@ -207,8 +202,8 @@
 
         <!-- 2. FILTER & TOOLBAR -->
         <Border Grid.Row="1"
-                Background="#180D1524"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="12,10"
@@ -216,8 +211,8 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <!-- Search Input -->
-                    <ColumnDefinition Width="280" />
-                    <!-- Level Filter Chips -->
+                    <ColumnDefinition Width="260" />
+                    <!-- Level Filter Chips with Toggle Button -->
                     <ColumnDefinition Width="*" />
                     <!-- Action Buttons -->
                     <ColumnDefinition Width="Auto" />
@@ -225,29 +220,31 @@
 
                 <!-- Search Input Box -->
                 <Border Grid.Column="0"
-                        Background="#200B101C"
-                        BorderBrush="#1AFFFFFF"
+                        Background="{DynamicResource AppBackgroundBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="8,4"
+                        CornerRadius="10"
+                        Padding="10,4"
+                        Height="36"
                         Margin="0,0,14,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <ui:SymbolIcon Symbol="Search24" FontSize="14" Foreground="#64748B" Margin="2,0,8,0" VerticalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Search24" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,0,8,0" VerticalAlignment="Center" />
                         <TextBox Grid.Column="1"
                                  Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 Foreground="#F8FAFC"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
                                  FontSize="12"
                                  VerticalAlignment="Center"
-                                 CaretBrush="#00D2FF" />
+                                 CaretBrush="{DynamicResource AccentBrush}" />
                         <TextBlock Grid.Column="1"
                                    Text="Фильтр по тексту, коду, URL..."
-                                   Foreground="#475569"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   Opacity="0.5"
                                    FontSize="12"
                                    IsHitTestVisible="False"
                                    VerticalAlignment="Center"
@@ -265,33 +262,158 @@
                     </Grid>
                 </Border>
 
-                <!-- Level Filters -->
+                <!-- Level Filters with Toggle Button (+) / (X) -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <RadioButton Content="Все"
-                                 IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=All, Mode=OneWay}"
-                                 Style="{StaticResource LogFilterChipStyle}"
-                                 Command="{Binding SetLevelFilterCommand}"
-                                 CommandParameter="All" />
-                    <RadioButton Content="Инфо"
-                                 IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Info, Mode=OneWay}"
-                                 Style="{StaticResource LogFilterChipStyle}"
-                                 Command="{Binding SetLevelFilterCommand}"
-                                 CommandParameter="Info" />
-                    <RadioButton Content="Варнинги"
-                                 IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Warning, Mode=OneWay}"
-                                 Style="{StaticResource LogFilterChipStyle}"
-                                 Command="{Binding SetLevelFilterCommand}"
-                                 CommandParameter="Warning" />
-                    <RadioButton Content="Ошибки"
-                                 IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Error, Mode=OneWay}"
-                                 Style="{StaticResource LogFilterChipStyle}"
-                                 Command="{Binding SetLevelFilterCommand}"
-                                 CommandParameter="Error" />
-                    <RadioButton Content="Отладка"
-                                 IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Debug, Mode=OneWay}"
-                                 Style="{StaticResource LogFilterChipStyle}"
-                                 Command="{Binding SetLevelFilterCommand}"
-                                 CommandParameter="Debug" />
+                    <!-- Toggle Filter Button (+) / (X) matching SearchView -->
+                    <ToggleButton x:Name="btnToggleLogFilters"
+                                  IsChecked="{Binding IsFiltersPanelOpen, Mode=TwoWay}"
+                                  Cursor="Hand"
+                                  ToolTip="Показать / скрыть фильтры уровней логов"
+                                  Margin="0,0,10,0">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Border x:Name="toggleBorder"
+                                        Width="36" Height="36"
+                                        Background="{DynamicResource CardBackgroundBrush}"
+                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                    <Grid>
+                                        <ui:SymbolIcon x:Name="plusIcon"
+                                                       Symbol="Add24"
+                                                       FontSize="18"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       RenderTransformOrigin="0.5,0.5">
+                                            <ui:SymbolIcon.RenderTransform>
+                                                <RotateTransform Angle="0" />
+                                            </ui:SymbolIcon.RenderTransform>
+                                        </ui:SymbolIcon>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="toggleBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                        <Setter TargetName="toggleBorder" Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+                                        <Setter TargetName="plusIcon" Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter TargetName="toggleBorder" Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                        <Setter TargetName="toggleBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                        <Setter TargetName="plusIcon" Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="plusIcon"
+                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                     To="45" Duration="0:0:0.25">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="plusIcon"
+                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                     To="0" Duration="0:0:0.22">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseIn" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </ToggleButton.Template>
+                    </ToggleButton>
+
+                    <!-- Filter Chips Panel -->
+                    <Border ClipToBounds="True" VerticalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Opacity" Value="0" />
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform X="-25" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFiltersPanelOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.0" To="1.0" Duration="0:0:0.28">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                     From="-25" To="0" Duration="0:0:0.28">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     To="0.0" Duration="0:0:0.18">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseIn" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                     To="-25" Duration="0:0:0.18">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseIn" />
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <RadioButton Content="{DynamicResource Logs_Level_All}"
+                                         IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=All, Mode=OneWay}"
+                                         Style="{StaticResource LogFilterChipStyle}"
+                                         Command="{Binding SetLevelFilterCommand}"
+                                         CommandParameter="All" />
+                            <RadioButton Content="{DynamicResource Logs_Level_Info}"
+                                         IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Info, Mode=OneWay}"
+                                         Style="{StaticResource LogFilterChipStyle}"
+                                         Command="{Binding SetLevelFilterCommand}"
+                                         CommandParameter="Info" />
+                            <RadioButton Content="{DynamicResource Logs_Level_Warning}"
+                                         IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Warning, Mode=OneWay}"
+                                         Style="{StaticResource LogFilterChipStyle}"
+                                         Command="{Binding SetLevelFilterCommand}"
+                                         CommandParameter="Warning" />
+                            <RadioButton Content="{DynamicResource Logs_Level_Error}"
+                                         IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Error, Mode=OneWay}"
+                                         Style="{StaticResource LogFilterChipStyle}"
+                                         Command="{Binding SetLevelFilterCommand}"
+                                         CommandParameter="Error" />
+                            <RadioButton Content="{DynamicResource Logs_Level_Debug}"
+                                         IsChecked="{Binding SelectedLevel, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Debug, Mode=OneWay}"
+                                         Style="{StaticResource LogFilterChipStyle}"
+                                         Command="{Binding SetLevelFilterCommand}"
+                                         CommandParameter="Debug" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Actions -->
@@ -300,7 +422,7 @@
                     <CheckBox IsChecked="{Binding AutoScroll, Mode=TwoWay}"
                               Margin="0,0,12,0"
                               VerticalAlignment="Center">
-                        <TextBlock Text="Автопрокрутка" FontSize="11" Foreground="#94A3B8" />
+                        <TextBlock Text="{DynamicResource Logs_AutoScroll}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" />
                     </CheckBox>
 
                     <!-- Copy All Button -->
@@ -309,8 +431,8 @@
                             Margin="0,0,8,0"
                             ToolTip="Скопировать все отфильтрованные логи">
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Copy24" FontSize="14" Margin="0,0,6,0" Foreground="#00D2FF" />
-                            <TextBlock Text="Копировать всё" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <ui:SymbolIcon Symbol="Copy24" FontSize="14" Margin="0,0,6,0" Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="{DynamicResource Logs_CopyAll}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 
@@ -320,7 +442,7 @@
                             ToolTip="Очистить текущий журнал логов">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Delete24" FontSize="14" Margin="0,0,6,0" Foreground="#FF3366" />
-                            <TextBlock Text="Очистить" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Logs_Clear}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -329,8 +451,8 @@
 
         <!-- 3. LOG ENTRIES LIST -->
         <Border Grid.Row="2"
-                Background="#100B111D"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="6">
@@ -375,12 +497,12 @@
                                         Padding="10,8">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#14111927" />
-                                            <Setter Property="BorderBrush" Value="#15FFFFFF" />
+                                            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#221B273F" />
-                                                    <Setter Property="BorderBrush" Value="#3300D2FF" />
+                                                    <Setter Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -430,7 +552,7 @@
                                                 <TextBlock Text="{Binding TimestampDisplay}"
                                                            FontFamily="Consolas, JetBrains Mono, Cascadia Code"
                                                            FontSize="11"
-                                                           Foreground="#64748B"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,8,0" />
 
@@ -449,15 +571,15 @@
                                                 </Border>
 
                                                 <!-- Source Pill -->
-                                                <Border Background="#15FFFFFF"
-                                                        BorderBrush="#25FFFFFF"
+                                                <Border Background="{DynamicResource CardBackgroundBrush}"
+                                                        BorderBrush="{DynamicResource CardBorderBrush}"
                                                         BorderThickness="1"
                                                         CornerRadius="4"
                                                         Padding="6,1">
                                                     <TextBlock Text="{Binding Source}"
                                                                FontSize="9"
                                                                FontWeight="SemiBold"
-                                                               Foreground="#94A3B8"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
                                                                FontFamily="Consolas, JetBrains Mono" />
                                                 </Border>
                                             </StackPanel>
@@ -466,13 +588,13 @@
                                             <TextBlock Text="{Binding Message}"
                                                        FontFamily="Consolas, JetBrains Mono, Cascadia Code"
                                                        FontSize="12"
-                                                       Foreground="#E2E8F0"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                                        TextWrapping="Wrap" />
 
                                             <!-- Expandable / Collapsible Details block (if any) -->
                                             <Border Margin="0,6,0,0"
-                                                    Background="#0A0E17"
-                                                    BorderBrush="#20FFFFFF"
+                                                    Background="{DynamicResource CardBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource CardBorderBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6"
                                                     Padding="10,8"
@@ -486,7 +608,7 @@
                                                     <TextBox Text="{Binding Details, Mode=OneWay}"
                                                              FontFamily="Consolas, JetBrains Mono, Cascadia Code"
                                                              FontSize="10"
-                                                             Foreground="#94A3B8"
+                                                             Foreground="{DynamicResource SecondaryTextBrush}"
                                                              Background="Transparent"
                                                              BorderThickness="0"
                                                              IsReadOnly="True"
@@ -528,14 +650,14 @@
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusNotification}"
                            FontSize="11"
-                           Foreground="#00D2FF"
+                           Foreground="{DynamicResource AccentBrush}"
                            FontFamily="Consolas, JetBrains Mono"
                            VerticalAlignment="Center" />
 
                 <!-- Filter indicator -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Уровень: " FontSize="10" Foreground="#64748B" />
-                    <TextBlock Text="{Binding SelectedLevel}" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,10,0" />
+                    <TextBlock Text="{Binding SelectedLevel}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,10,0" />
                     <TextBlock Text="Отображено: " FontSize="10" Foreground="#64748B" />
                     <TextBlock Text="{Binding FilteredLogs.Count}" FontSize="10" FontWeight="Bold" Foreground="#F8FAFC" />
                 </StackPanel>

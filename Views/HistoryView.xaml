@@ -17,10 +17,10 @@
         <conv:StringNullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
 
         <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#261A1D2C" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -37,9 +37,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ghostBorder" Property="Background" Value="#3D252B40" />
-                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="#33FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -113,8 +112,8 @@
 
         <!-- TOP ACTION HEADER -->
         <Border Grid.Row="0"
-                Background="#660F121C"
-                BorderBrush="#1AFFFFFF"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="18,16"
@@ -126,13 +125,13 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="История поисковых сессий"
+                    <TextBlock Text="{DynamicResource History_Title}"
                                FontSize="18"
                                FontWeight="Bold"
-                               Foreground="#F8FAFC" />
-                    <TextBlock Text="Хранилище сессий OSINT-разведки и повторный просмотр находок"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                    <TextBlock Text="{DynamicResource History_Subtitle}"
                                FontSize="12"
-                               Foreground="#64748B"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
                                Margin="0,3,0,0" />
                 </StackPanel>
 
@@ -147,8 +146,8 @@
                             Padding="16,0"
                             Style="{StaticResource CyberGhostButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="ArrowClockwise24" Margin="0,0,8,0" FontSize="15" Foreground="#00D2FF" />
-                            <TextBlock Text="Обновить список" VerticalAlignment="Center" />
+                            <ui:SymbolIcon Symbol="ArrowClockwise24" Margin="0,0,8,0" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="{DynamicResource History_RefreshBtn}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -173,17 +172,17 @@
         <!-- SESSION LIST -->
         <Grid Grid.Row="2">
             <!-- Empty state -->
-            <Border Background="#330F121C"
-                    BorderBrush="#1AFFFFFF"
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="48"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="History24" FontSize="54" Foreground="#334155" Margin="0,0,0,16" />
-                    <TextBlock Text="История сессий пуста" FontSize="17" FontWeight="Bold" Foreground="#E2E8F0" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                    <TextBlock Text="Нажмите «Обновить список» для загрузки сохраненных сессий с сервера Meridian Search Platform."
-                               Foreground="#64748B"
+                    <ui:SymbolIcon Symbol="History24" FontSize="54" Foreground="{DynamicResource SecondaryTextBrush}" Opacity="0.4" Margin="0,0,0,16" />
+                    <TextBlock Text="{DynamicResource History_EmptyTitle}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                    <TextBlock Text="{DynamicResource History_EmptyDesc}"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="13"
                                TextAlignment="Center"
                                MaxWidth="420"
@@ -203,12 +202,11 @@
                                     Margin="0,0,0,10">
                                 <Border.Style>
                                     <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#6610131F" />
-                                        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+                                        <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#8014192A" />
-                                                <Setter Property="BorderBrush" Value="#4D00D2FF" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                 <Setter Property="Effect">
                                                     <Setter.Value>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.25" />
@@ -263,12 +261,12 @@
                                                        FontSize="16"
                                                        FontWeight="Bold"
                                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
-                                                       Foreground="#F8FAFC"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                                        Margin="0,0,14,0" />
 
                                             <!-- Status Badge -->
-                                            <Border Background="#261E293B"
-                                                    BorderBrush="#1AFFFFFF"
+                                            <Border Background="{DynamicResource CardBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource CardBorderBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6"
                                                     Padding="8,2"
@@ -277,24 +275,21 @@
                                                            FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                                            FontSize="11"
                                                            FontWeight="SemiBold"
-                                                           Foreground="#94A3B8" />
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
                                             </Border>
 
-                                            <!-- Findings count badge with Neon Glow -->
-                                            <Border Background="#1A00D2FF"
-                                                    BorderBrush="#4D00D2FF"
+                                            <!-- Findings count badge with Dynamic Accent -->
+                                            <Border Background="{DynamicResource SubtleAccentBrush}"
+                                                    BorderBrush="{DynamicResource BorderAccentBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6"
                                                     Padding="8,2">
-                                                <Border.Effect>
-                                                    <DropShadowEffect Color="#00D2FF" BlurRadius="10" ShadowDepth="0" Opacity="0.4" />
-                                                </Border.Effect>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="НАХОДОК: " Foreground="#67E8F9" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="НАХОДОК: " Foreground="{DynamicResource AccentBrush}" FontSize="10" FontWeight="Bold" />
                                                     <TextBlock Text="{Binding TotalFindings}"
                                                                FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                                                FontWeight="Black"
-                                                               Foreground="#00D2FF"
+                                                               Foreground="{DynamicResource AccentBrush}"
                                                                FontSize="11" />
                                                 </StackPanel>
                                             </Border>
@@ -302,15 +297,15 @@
 
                                         <!-- Session Id & Timestamps (Monospace) -->
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="ID: " Foreground="#64748B" FontSize="11" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding EffectiveId}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="#94A3B8" FontSize="11" Margin="0,0,16,0" />
+                                            <TextBlock Text="ID: " Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding EffectiveId}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,16,0" />
 
-                                            <TextBlock Text="СОЗДАНА: " Foreground="#64748B" FontSize="11" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding FormattedCreatedAt}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="#94A3B8" FontSize="11" Margin="0,0,16,0" />
+                                            <TextBlock Text="СОЗДАНА: " Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding FormattedCreatedAt}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,16,0" />
 
-                                            <TextBlock Text="ЗАВЕРШЕНА: " Foreground="#64748B" FontSize="11" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding FormattedFinishedAt}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="#94A3B8" FontSize="11" Margin="0,0,8,0" />
-                                            <TextBlock Text="{Binding FormattedDuration}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="#00D2FF" FontSize="11" FontWeight="Bold" />
+                                            <TextBlock Text="ЗАВЕРШЕНА: " Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding FormattedFinishedAt}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding FormattedDuration}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="Bold" />
                                         </StackPanel>
                                     </StackPanel>
 
@@ -325,8 +320,8 @@
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="openBorder"
-                                                        Background="#1A00D2FF"
-                                                        BorderBrush="#4D00D2FF"
+                                                        Background="{DynamicResource SubtleAccentBrush}"
+                                                        BorderBrush="{DynamicResource BorderAccentBrush}"
                                                         BorderThickness="1"
                                                         CornerRadius="10"
                                                         Padding="{TemplateBinding Padding}">
@@ -334,20 +329,14 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="openBorder" Property="Background" Value="#3300D2FF" />
-                                                        <Setter TargetName="openBorder" Property="BorderBrush" Value="#00D2FF" />
-                                                        <Setter TargetName="openBorder" Property="Effect">
-                                                            <Setter.Value>
-                                                                <DropShadowEffect Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.7" />
-                                                            </Setter.Value>
-                                                        </Setter>
+                                                        <Setter TargetName="openBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
                                         </Button.Template>
                                         <StackPanel Orientation="Horizontal">
-                                            <ui:SymbolIcon Symbol="Open24" Margin="0,0,8,0" Foreground="#00D2FF" FontSize="15" />
-                                            <TextBlock Text="Открыть сессию" FontWeight="Bold" Foreground="#00D2FF" FontSize="12" VerticalAlignment="Center" />
+                                            <ui:SymbolIcon Symbol="Open24" Margin="0,0,8,0" Foreground="{DynamicResource AccentBrush}" FontSize="15" />
+                                            <TextBlock Text="{DynamicResource History_OpenSession}" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" FontSize="12" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
 
