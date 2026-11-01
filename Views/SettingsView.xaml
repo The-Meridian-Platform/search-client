@@ -1,0 +1,266 @@
+<UserControl x:Class="MeridianClient.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:MeridianClient.ViewModels"
+             xmlns:conv="clr-namespace:MeridianClient.Converters"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
+             d:DesignHeight="720" d:DesignWidth="980">
+
+    <UserControl.Resources>
+        <conv:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <conv:StringNullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
+
+        <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#261A1D2C" />
+            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ghostBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ghostBorder" Property="Background" Value="#3D252B40" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="#33FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20,24,24">
+        <Grid.RenderTransform>
+            <TranslateTransform Y="0" />
+        </Grid.RenderTransform>
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.25">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="12" To="0" Duration="0:0:0.25">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+        <Grid.RowDefinitions>
+            <!-- Header -->
+            <RowDefinition Height="Auto" />
+            <!-- Settings Card -->
+            <RowDefinition Height="Auto" />
+            <!-- Actions & Results -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0"
+                Background="#660F121C"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="18,16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Конфигурация шлюза Meridian Platform"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#F8FAFC" />
+                <TextBlock Text="Сетевые параметры REST API и gRPC HTTP/2 Streaming подключения"
+                           FontSize="12"
+                           Foreground="#64748B"
+                           Margin="0,3,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- SETTINGS CARD -->
+        <Border Grid.Row="1"
+                Background="#6610131F"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="22"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <!-- URL Field -->
+                <TextBlock Text="БАЗОВЫЙ URL БЭКЕНДА:"
+                           FontWeight="Bold"
+                           FontSize="11"
+                           Foreground="#94A3B8"
+                           Margin="0,0,0,8" />
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBox Grid.Column="0"
+                                Text="{Binding BackendUrl, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="http://localhost:5168 или https://localhost:7013"
+                                Icon="{ui:SymbolIcon Link24}"
+                                Height="42"
+                                BorderBrush="#1AFFFFFF"
+                                Background="#33090B12"
+                                FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                FontSize="13"
+                                Margin="0,0,10,0" />
+
+                    <!-- Preset HTTP (5168) -->
+                    <Button Grid.Column="1"
+                            Content="HTTP (5168)"
+                            Margin="0,0,8,0"
+                            Padding="16,0"
+                            Height="42"
+                            Command="{Binding SelectPresetHttpCommand}"
+                            Style="{StaticResource CyberGhostButtonStyle}" />
+
+                    <!-- Preset HTTPS (7013) -->
+                    <Button Grid.Column="2"
+                            Content="HTTPS (7013)"
+                            Padding="16,0"
+                            Height="42"
+                            Command="{Binding SelectPresetHttpsCommand}"
+                            Style="{StaticResource CyberGhostButtonStyle}" />
+                </Grid>
+
+                <!-- HTTP/2 Switch -->
+                <CheckBox Content="Разрешить незашифрованный HTTP/2 (SocketsHttpHandler.Http2UnencryptedSupport)"
+                          IsChecked="{Binding AllowUnencryptedHttp2}"
+                          Margin="0,0,0,16"
+                          FontSize="13"
+                          Foreground="#CBD5E1" />
+
+                <!-- Timeout -->
+                <TextBlock Text="ТАЙМАУТ СЕТЕВЫХ ЗАПРОСОВ (СЕК):"
+                           FontWeight="Bold"
+                           FontSize="11"
+                           Foreground="#94A3B8"
+                           Margin="0,0,0,8" />
+                <ui:TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
+                            Width="160"
+                            HorizontalAlignment="Left"
+                            Height="38"
+                            BorderBrush="#1AFFFFFF"
+                            Background="#33090B12"
+                            FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                            FontSize="13"
+                            Margin="0,0,0,24" />
+
+                <!-- Action Buttons: Save & Test Connection -->
+                <StackPanel Orientation="Horizontal">
+                    <!-- Neon Cyan Save Button -->
+                    <Button Height="40"
+                            Padding="22,0"
+                            Margin="0,0,12,0"
+                            Command="{Binding SaveSettingsCommand}"
+                            Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="saveBorder"
+                                        Background="#00D2FF"
+                                        CornerRadius="10"
+                                        Padding="{TemplateBinding Padding}">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#00D2FF" BlurRadius="18" ShadowDepth="0" Opacity="0.6" />
+                                    </Border.Effect>
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="saveBorder" Property="Background" Value="#33DDFF" />
+                                        <Setter TargetName="saveBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#00D2FF" BlurRadius="26" ShadowDepth="0" Opacity="0.85" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Save24" Margin="0,0,8,0" Foreground="#040914" FontSize="15" />
+                            <TextBlock Text="Сохранить настройки" FontWeight="Bold" Foreground="#040914" FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Test Connection Ghost Button -->
+                    <Button Height="40"
+                            Padding="18,0"
+                            Command="{Binding TestConnectionCommand}"
+                            IsEnabled="{Binding IsTesting, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
+                            Style="{StaticResource CyberGhostButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Checkmark24" Margin="0,0,8,0" Foreground="#00E599" FontSize="15" />
+                            <TextBlock Text="Проверить соединение" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <ui:ProgressRing Width="20" Height="20"
+                                     IsIndeterminate="True"
+                                     Margin="14,0,0,0"
+                                     Visibility="{Binding IsTesting, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <!-- Saved Status Feedback with Neon Green -->
+                <TextBlock Text="{Binding SavedStatus}"
+                           Foreground="#00E599"
+                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                           FontWeight="SemiBold"
+                           FontSize="12"
+                           Margin="0,12,0,0"
+                           Visibility="{Binding SavedStatus, Converter={StaticResource NotEmptyToVis}}" />
+            </StackPanel>
+        </Border>
+
+        <!-- DIAGNOSTIC RESULT CARD -->
+        <Border Grid.Row="2"
+                Background="#6610131F"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="16"
+                Visibility="{Binding TestResult, Converter={StaticResource NotEmptyToVis}}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ui:SymbolIcon Symbol="Info24"
+                                   Foreground="#00D2FF"
+                                   Margin="0,0,8,0" />
+                    <TextBlock Text="ДИАГНОСТИКА СОЕДИНЕНИЯ:"
+                               FontWeight="Bold"
+                               FontSize="11"
+                               Foreground="#CBD5E1" />
+                </StackPanel>
+                <TextBlock Text="{Binding TestResult}"
+                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                           FontSize="12"
+                           Foreground="#94A3B8"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

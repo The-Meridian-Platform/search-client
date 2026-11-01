@@ -1,0 +1,1374 @@
+<UserControl x:Class="MeridianClient.Views.SearchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:MeridianClient.ViewModels"
+             xmlns:conv="clr-namespace:MeridianClient.Converters"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance vm:SearchViewModel}"
+             d:DesignHeight="780" d:DesignWidth="1050">
+
+    <UserControl.Resources>
+        <conv:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <conv:StatusToBrushConverter x:Key="StatusToBrush" />
+        <conv:FindingTypeToBrushConverter x:Key="TypeToBrush" />
+        <conv:StringNullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
+        <conv:StringEqualsToBooleanConverter x:Key="StringEqualsToBool" />
+
+        <!-- Linear / Raycast Filter Button Style -->
+        <Style x:Key="CyberFilterChipStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="#33141826" />
+            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#94A3B8" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="GroupName" Value="FindingsCategoryFilters" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="chipBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="chipBorder" Property="Background" Value="#4D1F2438" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#4D00D2FF" />
+                                <Setter Property="Foreground" Value="#F8FAFC" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="chipBorder" Property="Background" Value="#2A00D2FF" />
+                                <Setter TargetName="chipBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter Property="Foreground" Value="#00D2FF" />
+                                <Setter TargetName="chipBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.45" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Ghost Action Button Style -->
+        <Style x:Key="CyberGhostButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#261A1D2C" />
+            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ghostBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ghostBorder" Property="Background" Value="#3D252B40" />
+                                <Setter TargetName="ghostBorder" Property="BorderBrush" Value="#33FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20,24,24">
+        <Grid.RenderTransform>
+            <TranslateTransform Y="0" />
+        </Grid.RenderTransform>
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.0" To="1.0" Duration="0:0:0.25">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="12" To="0" Duration="0:0:0.25">
+                            <DoubleAnimation.EasingFunction>
+                                <CubicEase EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+        <Grid.RowDefinitions>
+            <!-- Search Control Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- Status & Metrics HUD -->
+            <RowDefinition Height="Auto" />
+            <!-- Filter Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- Findings Feed -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- TOP BAR: Target input & Start Search -->
+        <Border Grid.Row="0"
+                Background="#660F121C"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="14"
+                Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Target Input Box -->
+                <ui:TextBox Grid.Column="0"
+                            Text="{Binding TargetInput, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="Цель разведки (домен, IP-адрес: example.com)"
+                            Icon="{ui:SymbolIcon Globe24}"
+                            Margin="0,0,10,0"
+                            VerticalContentAlignment="Center"
+                            Height="42"
+                            BorderBrush="#1AFFFFFF"
+                            Background="#40090B12"
+                            FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                            FontSize="13" />
+
+                <!-- Target Type ComboBox -->
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding TargetTypes}"
+                          SelectedItem="{Binding SelectedTargetType}"
+                          Margin="0,0,10,0"
+                          Height="42"
+                          VerticalContentAlignment="Center"
+                          Background="#40090B12"
+                          BorderBrush="#1AFFFFFF" />
+
+                <!-- Ultra-Premium Neon Cyan Start Search Button -->
+                <Button Grid.Column="2"
+                        Height="42"
+                        Padding="22,0"
+                        Margin="0,0,8,0"
+                        Command="{Binding StartSearchCommand}"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="neonBorder"
+                                    Background="#00D2FF"
+                                    CornerRadius="10"
+                                    Padding="{TemplateBinding Padding}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#00D2FF" BlurRadius="20" ShadowDepth="0" Opacity="0.65" />
+                                </Border.Effect>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="neonBorder" Property="Background" Value="#33DDFF" />
+                                    <Setter TargetName="neonBorder" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#00D2FF" BlurRadius="28" ShadowDepth="0" Opacity="0.9" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="neonBorder" Property="Background" Value="#334155" />
+                                    <Setter TargetName="neonBorder" Property="Effect" Value="{x:Null}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Search24" Margin="0,0,8,0" Foreground="#040914" FontSize="16" />
+                        <TextBlock Text="Начать поиск" FontWeight="Bold" FontSize="13" Foreground="#040914" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Stop Search Button (Neon Red) -->
+                <Button Grid.Column="3"
+                        Height="42"
+                        Padding="16,0"
+                        Margin="0,0,8,0"
+                        Command="{Binding StopSearchCommand}"
+                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="stopBorder"
+                                    Background="#26FF3366"
+                                    BorderBrush="#FF3366"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="{TemplateBinding Padding}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF3366" BlurRadius="16" ShadowDepth="0" Opacity="0.6" />
+                                </Border.Effect>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="stopBorder" Property="Background" Value="#40FF3366" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Stop24" Margin="0,0,6,0" Foreground="#FF3366" />
+                        <TextBlock Text="Остановить" FontWeight="SemiBold" Foreground="#FF3366" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Clear Button -->
+                <Button Grid.Column="4"
+                        Height="42"
+                        Padding="16,0"
+                        Command="{Binding ClearResultsCommand}"
+                        Style="{StaticResource CyberGhostButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" FontSize="15" />
+                        <TextBlock Text="Очистить" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- STATUS & METRICS HUD STRIP (Linear / Cyber OSINT) -->
+        <Border Grid.Row="1"
+                Background="#4D0E111C"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="16,12"
+                Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Session Status Badge -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Elapsed Time -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Counters (Total / DNS / Whois) -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Status message text -->
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Status Badge with Glowing Dot -->
+                <Border Grid.Column="0"
+                        Background="#26101424"
+                        BorderBrush="#1AFFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="12,5"
+                        Margin="0,0,14,0"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8"
+                                 Fill="{Binding SessionStatus, Converter={StaticResource StatusToBrush}}"
+                                 Margin="0,0,8,0">
+                            <Ellipse.Effect>
+                                <DropShadowEffect Color="#00D2FF" BlurRadius="10" ShadowDepth="0" Opacity="0.85" />
+                            </Ellipse.Effect>
+                            <Ellipse.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.35" To="1.0" Duration="0:0:0.9">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <SineEase EasingMode="EaseInOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Ellipse.Triggers>
+                        </Ellipse>
+                        <TextBlock Text="{Binding SessionStatus}"
+                                   FontWeight="Bold"
+                                   FontSize="12"
+                                   Foreground="#F1F5F9"
+                                   VerticalAlignment="Center" />
+                        <ui:ProgressRing Width="14" Height="14"
+                                         Margin="8,0,0,0"
+                                         IsIndeterminate="True"
+                                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Elapsed Timer (Monospace) -->
+                <Border Grid.Column="1"
+                        Background="#26101424"
+                        BorderBrush="#1AFFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="12,5"
+                        Margin="0,0,16,0"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="Timer24" Margin="0,0,7,0" FontSize="14" Foreground="#00D2FF" />
+                        <TextBlock Text="ВРЕМЯ: " Foreground="#64748B" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ElapsedTime}"
+                                   FontWeight="Bold"
+                                   FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                   Foreground="#00D2FF"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Finding Counters (Raycast Glass Pills) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <!-- Total Counter with Cyan Glow -->
+                    <Border Background="#1A00D2FF"
+                            BorderBrush="#4D00D2FF"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.4" />
+                        </Border.Effect>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="НАХОДКИ: " Foreground="#67E8F9" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{Binding TotalFindingsCount}"
+                                       FontWeight="Black"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#00D2FF"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DNS Counter -->
+                    <Border Background="#1A3B82F6"
+                            BorderBrush="#333B82F6"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="DNS: " Foreground="#93C5FD" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{Binding DnsFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#60A5FA"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- WHOIS Counter -->
+                    <Border Background="#1AFF007F"
+                            BorderBrush="#33FF007F"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="WHOIS: " Foreground="#F472B6" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{Binding WhoisFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#FF007F"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Subdomains Counter -->
+                    <Border Background="#1A00F0FF"
+                            BorderBrush="#3300F0FF"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ПОДДОМЕНЫ: " Foreground="#67E8F9" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{Binding SubdomainFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#00F0FF"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Web Tech Counter -->
+                    <Border Background="#1A00E599"
+                            BorderBrush="#3300E599"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ВЕБ-СТЕК: " Foreground="#6EE7B7" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="{Binding HttpTechFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#00E599"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="3"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#94A3B8"
+                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                           FontSize="12"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+            </Grid>
+        </Border>
+
+        <!-- FILTER & QUICK SEARCH BAR -->
+        <Grid Grid.Row="2" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Toggle Filter Button (+) & Collapsible Filter Chips Container -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Neon Plus (+) Toggle Button with Smooth Rotate Animation -->
+                <ToggleButton x:Name="btnToggleFilters"
+                              IsChecked="{Binding IsFiltersPanelOpen, Mode=TwoWay}"
+                              Cursor="Hand"
+                              ToolTip="Показать / скрыть фильтры по категориям"
+                              Margin="0,0,10,0">
+                    <ToggleButton.Template>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="toggleBorder"
+                                    Width="36" Height="36"
+                                    Background="#26141826"
+                                    BorderBrush="#26FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                <Grid>
+                                    <ui:SymbolIcon x:Name="plusIcon"
+                                                   Symbol="Add24"
+                                                   FontSize="18"
+                                                   Foreground="#94A3B8"
+                                                   RenderTransformOrigin="0.5,0.5">
+                                        <ui:SymbolIcon.RenderTransform>
+                                            <RotateTransform Angle="0" />
+                                        </ui:SymbolIcon.RenderTransform>
+                                    </ui:SymbolIcon>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="#3320263B" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#4D00D2FF" />
+                                    <Setter TargetName="plusIcon" Property="Foreground" Value="#00D2FF" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="#2A00D2FF" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#00D2FF" />
+                                    <Setter TargetName="plusIcon" Property="Foreground" Value="#00D2FF" />
+                                    <Setter TargetName="toggleBorder" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="plusIcon"
+                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                 To="45" Duration="0:0:0.25">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="plusIcon"
+                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                 To="0" Duration="0:0:0.22">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </ToggleButton.Template>
+                </ToggleButton>
+
+                <!-- Animated Filter Chips Panel (Sliding & Fading in/out) -->
+                <Border x:Name="filterChipsPanel" ClipToBounds="True" VerticalAlignment="Center">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Opacity" Value="0" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Setter Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="-25" />
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsFiltersPanelOpen}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0.0" To="1.0" Duration="0:0:0.28">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                 From="-25" To="0" Duration="0:0:0.28">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 To="0.0" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                 To="-25" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseIn" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Content="Все находки"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=All, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="All"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="DNS записи"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=DNS, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="DNS"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="WHOIS данные"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Whois, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="Whois"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="Поддомены"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Subdomains, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="Subdomains"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="Веб-стек"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Tech, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="Tech"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="Прочее"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Other, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="Other"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Quick Filter / Search inside findings -->
+            <ui:TextBox Grid.Column="1"
+                        Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="Фильтрация находок (IP, хост, тип, провайдер)..."
+                        Icon="{ui:SymbolIcon Filter24}"
+                        HorizontalAlignment="Right"
+                        Width="340"
+                        Height="36"
+                        BorderBrush="#1AFFFFFF"
+                        Background="#33090B12"
+                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                        FontSize="12" />
+        </Grid>
+
+        <!-- FINDINGS FEED LIST (WITH SMOOTH FADE-IN ANIMATION) -->
+        <Grid Grid.Row="3">
+            <!-- Empty state when no findings -->
+            <Border Background="#330F121C"
+                    BorderBrush="#1AFFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="48"
+                    Visibility="{Binding Findings.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid Margin="0,0,0,18">
+                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="#334155" />
+                        <ui:SymbolIcon Symbol="SearchVisual24" FontSize="56" Foreground="#00D2FF" Opacity="0.3">
+                            <ui:SymbolIcon.Effect>
+                                <DropShadowEffect Color="#00D2FF" BlurRadius="30" ShadowDepth="0" Opacity="0.4" />
+                            </ui:SymbolIcon.Effect>
+                        </ui:SymbolIcon>
+                    </Grid>
+                    <TextBlock Text="Ожидание поисковой сессии"
+                               FontSize="17"
+                               FontWeight="Bold"
+                               Foreground="#E2E8F0"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,6" />
+                    <TextBlock Text="Укажите целевой домен или IP-адрес и активируйте поиск для потокового приёма разведданных в реальном времени."
+                               Foreground="#64748B"
+                               FontSize="13"
+                               TextAlignment="Center"
+                               MaxWidth="480"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Scrollable list of findings with animated cards -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding FindingsView}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:FindingItemViewModel}">
+                            <!-- Animated Finding Card with Hover Glow -->
+                            <Border BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="16"
+                                    Margin="0,0,0,10">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#6610131F" />
+                                        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#80141829" />
+                                                <Setter Property="BorderBrush" Value="#4D00D2FF" />
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.25" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <!-- FAST DISMISS FLY-AWAY ANIMATION ON CLEAR -->
+                                            <DataTrigger Binding="{Binding IsDismissing}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                             To="0.0" Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseIn" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="120" Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseIn" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                             To="-20" Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseIn" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border.RenderTransform>
+                                    <TranslateTransform X="0" Y="0" />
+                                </Border.RenderTransform>
+
+                                <!-- SMOOTH FADE-IN & SLIDE ANIMATION ON ARRIVAL -->
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0.0" To="1.0"
+                                                                 Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                 From="14" To="0"
+                                                                 Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Border.Triggers>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <!-- Header row: Type badge, Provider, Timestamp, Raw JSON button -->
+                                        <RowDefinition Height="Auto" />
+                                        <!-- Middle row: Structured details (DNS or Whois or Generic) -->
+                                        <RowDefinition Height="Auto" />
+                                        <!-- Bottom row: Raw JSON accordion -->
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- HEADER ROW -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Glowing Dynamic Type Badge -->
+                                        <Border Grid.Column="0"
+                                                Background="{Binding TypeBadgeBackground}"
+                                                BorderBrush="{Binding TypeBadgeColor}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="10,3"
+                                                Margin="0,0,10,0">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#00D2FF" BlurRadius="10" ShadowDepth="0" Opacity="0.35" />
+                                            </Border.Effect>
+                                            <TextBlock Text="{Binding TypeBadgeText}"
+                                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                       FontWeight="Bold"
+                                                       FontSize="11"
+                                                       Foreground="{Binding TypeBadgeColor}" />
+                                        </Border>
+
+                                        <!-- Provider Badge -->
+                                        <Border Grid.Column="1"
+                                                Background="#261E293B"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="8,3"
+                                                Margin="0,0,10,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="SRC: " Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding ProviderKey}"
+                                                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#CBD5E1"
+                                                           FontSize="11" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Timestamp (Monospace) -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding CreatedAt}"
+                                                   FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                   Foreground="#64748B"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center" />
+
+                                        <!-- Expand/Collapse Raw JSON Button -->
+                                        <Button Grid.Column="3"
+                                                Command="{Binding ToggleExpandCommand}"
+                                                Padding="10,4"
+                                                FontSize="11"
+                                                Style="{StaticResource CyberGhostButtonStyle}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:SymbolIcon Symbol="Code24" Margin="0,0,5,0" FontSize="13" Foreground="#00D2FF" />
+                                                <TextBlock Text="JSON" FontFamily="JetBrains Mono, Cascadia Code, Consolas" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- MIDDLE ROW: STRUCTURED DATA -->
+
+                                    <!-- 1. DNS Content Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsDns, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Host & Target / IP (Monospace) -->
+                                            <StackPanel Grid.Column="0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding DnsData.Value}"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               Foreground="{Binding DnsData.RecordTypeColor}"
+                                                               TextWrapping="Wrap" />
+                                                    <Button Command="{Binding CopyValueCommand}"
+                                                            CommandParameter="{Binding DnsData.Value}"
+                                                            ToolTip="Скопировать значение DNS"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,0"
+                                                            Margin="6,0,0,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                    </Button>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                    <ui:SymbolIcon Symbol="Globe24" FontSize="12" Foreground="#64748B" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding DnsData.Name}"
+                                                               FontSize="12"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               Foreground="#94A3B8"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- TTL & Priority Badges (Monospace) -->
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Background="#1AFFFFFF"
+                                                        BorderBrush="#1AFFFFFF"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="8,3"
+                                                        Margin="6,0,0,0"
+                                                        Visibility="{Binding DnsData.HasTtl, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding DnsData.Ttl, StringFormat='TTL {0}s'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#94A3B8" />
+                                                </Border>
+
+                                                <Border Background="#26FF7A00"
+                                                        BorderBrush="#4DFF7A00"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="8,3"
+                                                        Margin="6,0,0,0"
+                                                        Visibility="{Binding DnsData.HasPriority, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding DnsData.Priority, StringFormat='PRIO {0}'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="#FF7A00" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- 2. WHOIS Content Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsWhois, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <!-- Header: Domain & Copy & Status -->
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding WhoisData.DomainName}"
+                                                           FontSize="17"
+                                                           FontWeight="Black"
+                                                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                           Foreground="#F8FAFC"
+                                                           VerticalAlignment="Center" />
+                                                <Button Command="{Binding CopyValueCommand}"
+                                                        CommandParameter="{Binding WhoisData.DomainName}"
+                                                        ToolTip="Скопировать домен"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="4,0"
+                                                        Margin="6,0,0,0"
+                                                        Cursor="Hand"
+                                                        VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                </Button>
+                                            </StackPanel>
+
+                                            <Border Grid.Column="1"
+                                                    Background="#26334155"
+                                                    BorderBrush="#1AFFFFFF"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="10,4"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding WhoisData.HasStatus, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding WhoisData.Status}"
+                                                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                           FontSize="11"
+                                                           Foreground="#94A3B8" />
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- WHOIS 4 Structured Detail Blocks -->
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Margin="0,0,0,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Registrar -->
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="РЕГИСТРАТОР" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding WhoisData.Registrar, TargetNullValue='—', FallbackValue='—'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
+                                                               Foreground="#00E599"
+                                                               Margin="0,3,0,0"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+
+                                                <!-- Created Date -->
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="СОЗДАН" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding WhoisData.CreatedDate, TargetNullValue='—', FallbackValue='—'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#CBD5E1"
+                                                               Margin="0,3,0,0" />
+                                                </StackPanel>
+
+                                                <!-- Expires Date -->
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="ИСТЕКАЕТ" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding WhoisData.ExpiresDate, TargetNullValue='—', FallbackValue='—'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#FFB800"
+                                                               Margin="0,3,0,0" />
+                                                </StackPanel>
+
+                                                <!-- Country / Org -->
+                                                <StackPanel Grid.Column="3">
+                                                    <TextBlock Text="СТРАНА / ОБНОВЛЕН" Foreground="#64748B" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding WhoisData.RegistrantCountry, TargetNullValue='—', FallbackValue='—'}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#00D2FF"
+                                                               Margin="0,3,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Nameservers row (if present in WHOIS) -->
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,2,0,0"
+                                                    Visibility="{Binding WhoisData.HasNameServers, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="DNS-СЕРВЕРЫ: " Foreground="#64748B" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                            <ItemsControl ItemsSource="{Binding WhoisData.NameServers}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#1AFFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="4,0,4,0">
+                                                            <TextBlock Text="{Binding}" FontFamily="JetBrains Mono, Cascadia Code" FontSize="10" Foreground="#CBD5E1" />
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- 3. Subdomain Content Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsSubdomain, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Subdomain Name & Issuer -->
+                                            <StackPanel Grid.Column="0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding SubdomainData.Subdomain}"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               Foreground="#00F0FF"
+                                                               TextWrapping="Wrap" />
+                                                    <Button Command="{Binding CopyValueCommand}"
+                                                            CommandParameter="{Binding SubdomainData.Subdomain}"
+                                                            ToolTip="Скопировать поддомен"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,0"
+                                                            Margin="6,0,0,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                    </Button>
+                                                </StackPanel>
+
+                                                <!-- Issuer & Validity -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <Border Background="#1A00D2FF" BorderBrush="#3300D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0"
+                                                            Visibility="{Binding SubdomainData.HasIssuer, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ui:SymbolIcon Symbol="Shield24" FontSize="11" Foreground="#00D2FF" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding SubdomainData.Issuer}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="11" Foreground="#CBD5E1" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#15FFFFFF" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,2"
+                                                            Visibility="{Binding SubdomainData.HasValidity, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ui:SymbolIcon Symbol="Calendar24" FontSize="11" Foreground="#64748B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding SubdomainData.ValidFrom}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="10" Foreground="#94A3B8" />
+                                                            <TextBlock Text=" → " FontSize="10" Foreground="#64748B" />
+                                                            <TextBlock Text="{Binding SubdomainData.ValidTo}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="10" Foreground="#94A3B8" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Right: Status Badge -->
+                                            <Border Grid.Column="1"
+                                                    Background="#1A00F0FF"
+                                                    BorderBrush="#4D00F0FF"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="10,5"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="CERT LOG" FontSize="10" FontWeight="Bold" Foreground="#00F0FF" FontFamily="JetBrains Mono" />
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- 4. HTTP Tech Content Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsHttpTech, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <!-- Top Row: Page Title & HTTP Status Code -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding HttpTechData.Title, FallbackValue='(Заголовок страницы отсутствует)'}"
+                                                           FontSize="16"
+                                                           FontWeight="Bold"
+                                                           Foreground="#F8FAFC"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                    <ui:SymbolIcon Symbol="Globe24" FontSize="12" Foreground="#64748B" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding HttpTechData.Url}"
+                                                               FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                               FontSize="12"
+                                                               Foreground="#38BDF8"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Command="{Binding CopyValueCommand}"
+                                                            CommandParameter="{Binding HttpTechData.Url}"
+                                                            ToolTip="Скопировать URL"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,0"
+                                                            Margin="6,0,0,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="13" Foreground="#64748B" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- HTTP Status Code Pill -->
+                                            <Border Grid.Column="1"
+                                                    Background="{Binding HttpTechData.StatusBackground}"
+                                                    BorderBrush="{Binding HttpTechData.StatusColor}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="12,5"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding HttpTechData.StatusBadgeText}"
+                                                           FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                           FontWeight="Bold"
+                                                           FontSize="12"
+                                                           Foreground="{Binding HttpTechData.StatusColor}" />
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Middle: Server, Framework, Content-Type & Security Posture -->
+                                        <Border Background="#100C1420"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,8"
+                                                Margin="0,0,0,4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Server & Framework -->
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Server -->
+                                                    <Border Background="#1AFFFFFF" BorderBrush="#25FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,6,0"
+                                                            Visibility="{Binding HttpTechData.HasServer, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="SERVER: " Foreground="#64748B" FontSize="9" FontWeight="Bold" />
+                                                            <TextBlock Text="{Binding HttpTechData.Server}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="10" Foreground="#E2E8F0" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <!-- Framework / Powered-By -->
+                                                    <Border Background="#20A855F7" BorderBrush="#4DA855F7" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,6,0"
+                                                            Visibility="{Binding HttpTechData.HasPoweredBy, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="POWERED: " Foreground="#A855F7" FontSize="9" FontWeight="Bold" />
+                                                            <TextBlock Text="{Binding HttpTechData.PoweredBy}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="10" Foreground="#E2E8F0" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <!-- Content-Type -->
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                        <TextBlock Text="{Binding HttpTechData.ContentType}" FontFamily="JetBrains Mono, Cascadia Code, Consolas" FontSize="10" Foreground="#94A3B8" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <!-- Security Badges: HSTS, CSP, X-Frame -->
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- HSTS Badge -->
+                                                    <Border CornerRadius="4" Margin="3,0,3,0">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#15475569" />
+                                                                <Setter Property="BorderBrush" Value="#25475569" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                                <Setter Property="Padding" Value="6,2" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HttpTechData.HasHsts}" Value="True">
+                                                                        <Setter Property="Background" Value="#2500E599" />
+                                                                        <Setter Property="BorderBrush" Value="#00E599" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="HSTS" FontSize="9" FontWeight="Bold" FontFamily="JetBrains Mono">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#64748B" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HttpTechData.HasHsts}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#00E599" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+
+                                                    <!-- CSP Badge -->
+                                                    <Border CornerRadius="4" Margin="3,0,3,0">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#15475569" />
+                                                                <Setter Property="BorderBrush" Value="#25475569" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                                <Setter Property="Padding" Value="6,2" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HttpTechData.HasCsp}" Value="True">
+                                                                        <Setter Property="Background" Value="#2500E599" />
+                                                                        <Setter Property="BorderBrush" Value="#00E599" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="CSP" FontSize="9" FontWeight="Bold" FontFamily="JetBrains Mono">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#64748B" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HttpTechData.HasCsp}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#00E599" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+
+                                                    <!-- X-Frame-Options Badge -->
+                                                    <Border CornerRadius="4" Margin="3,0,0,0">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#15475569" />
+                                                                <Setter Property="BorderBrush" Value="#25475569" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                                <Setter Property="Padding" Value="6,2" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HttpTechData.HasXFrameOptions}" Value="True">
+                                                                        <Setter Property="Background" Value="#2500E599" />
+                                                                        <Setter Property="BorderBrush" Value="#00E599" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="X-FRAME" FontSize="9" FontWeight="Bold" FontFamily="JetBrains Mono">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#64748B" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HttpTechData.HasXFrameOptions}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#00E599" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- 5. Generic Other Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Margin="0,4,0,4">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsDns}" Value="False" />
+                                                            <Condition Binding="{Binding IsWhois}" Value="False" />
+                                                            <Condition Binding="{Binding IsSubdomain}" Value="False" />
+                                                            <Condition Binding="{Binding IsHttpTech}" Value="False" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+
+                                        <Border Background="#0C101A"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="10,8">
+                                            <TextBlock Text="{Binding RawJson}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxHeight="50"
+                                                       Foreground="#94A3B8"
+                                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                       FontSize="11" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- BOTTOM ROW: COLLAPSIBLE RAW JSON VIEWER (Obsidian Glass) -->
+                                    <Border Grid.Row="2"
+                                            Background="#9906080F"
+                                            BorderBrush="#1AFFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="12"
+                                            Margin="0,10,0,0"
+                                            Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Raw JSON Action Bar -->
+                                            <Grid Grid.Row="0" Margin="0,0,0,8">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,6,0" />
+                                                    <TextBlock Text="RAW PAYLOAD (JSON):"
+                                                               Foreground="#64748B"
+                                                               FontSize="10"
+                                                               FontWeight="Bold" />
+                                                </StackPanel>
+
+                                                <Button HorizontalAlignment="Right"
+                                                        Command="{Binding CopyJsonCommand}"
+                                                        Padding="10,4"
+                                                        FontSize="11"
+                                                        Style="{StaticResource CyberGhostButtonStyle}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <ui:SymbolIcon Symbol="Copy24" Margin="0,0,5,0" FontSize="13" Foreground="#00D2FF" />
+                                                        <TextBlock Text="Скопировать" FontFamily="JetBrains Mono, Cascadia Code, Consolas" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+
+                                            <!-- Prettified JSON Text with Cyber Cyan Syntax Look -->
+                                            <TextBox Grid.Row="1"
+                                                     Text="{Binding FormattedJson, Mode=OneWay}"
+                                                     IsReadOnly="True"
+                                                     TextWrapping="Wrap"
+                                                     MaxHeight="220"
+                                                     VerticalScrollBarVisibility="Auto"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Foreground="#38BDF8"
+                                                     FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                                     FontSize="12" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

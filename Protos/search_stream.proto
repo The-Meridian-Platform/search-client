@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option csharp_namespace = "Meridian.Client.Grpc";
+
+service SearchStreamService {
+  rpc SubscribeToSession (SubscribeSessionRequest) returns (stream SearchStreamResponse);
+}
+
+message SubscribeSessionRequest {
+  string session_id = 1;
+}
+
+message SearchStreamResponse {
+  string session_id = 1;
+
+  oneof payload {
+    SessionStartedPayload session_started = 2;
+    FindingDiscoveredPayload finding_discovered = 3;
+    SessionFinishedPayload session_finished = 4;
+  }
+}
+
+message SessionStartedPayload {
+  string target_value = 1;
+  string started_at = 2;
+}
+
+message FindingDiscoveredPayload {
+  string finding_id = 1;
+  string provider_key = 2;
+  string type = 3;
+  string data_json = 4;
+  string created_at = 5;
+}
+
+message SessionFinishedPayload {
+  string status = 1;
+  string finished_at = 2;
+  int32 total_findings = 3;
+}
