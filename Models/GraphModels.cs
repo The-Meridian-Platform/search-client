@@ -78,7 +78,15 @@ public partial class GraphNode : ObservableObject
     [ObservableProperty]
     private int _expansionDepth;
 
-    // Physics state
+    [ObservableProperty]
+    private bool _isCollapsed;
+
+    [ObservableProperty]
+    private int _collapsedCount;
+
+    [ObservableProperty]
+    private bool _isVisible = true;
+
     public double Vx { get; set; }
     public double Vy { get; set; }
     public double Mass { get; set; } = 1.0;
@@ -206,6 +214,9 @@ public partial class GraphEdge : ObservableObject
 
     [ObservableProperty]
     private bool _isHighlighted;
+
+    [ObservableProperty]
+    private bool _isVisible = true;
 
     public GraphEdge(GraphNode source, GraphNode target, string label)
     {

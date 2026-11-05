@@ -56,6 +56,9 @@ public partial class GraphView : UserControl
             vm.RequestCenterView -= CenterGraphOnScreen;
             vm.RequestCenterView += CenterGraphOnScreen;
 
+            vm.RequestExportHighDpiImage -= ExportHighDpiImage;
+            vm.RequestExportHighDpiImage += ExportHighDpiImage;
+
             ((INotifyCollectionChanged)vm.Nodes).CollectionChanged -= OnNodesCollectionChanged;
             ((INotifyCollectionChanged)vm.Nodes).CollectionChanged += OnNodesCollectionChanged;
 
@@ -77,6 +80,7 @@ public partial class GraphView : UserControl
         if (DataContext is GraphViewModel vm)
         {
             vm.RequestCenterView -= CenterGraphOnScreen;
+            vm.RequestExportHighDpiImage -= ExportHighDpiImage;
             ((INotifyCollectionChanged)vm.Nodes).CollectionChanged -= OnNodesCollectionChanged;
             ((INotifyCollectionChanged)vm.Edges).CollectionChanged -= OnEdgesCollectionChanged;
         }
@@ -195,7 +199,47 @@ public partial class GraphView : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
         circle.Child = icon;
-        container.Children.Add(circle);
+
+        var circleGrid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        circleGrid.Children.Add(circle);
+
+        var collapseBadge = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(230, 245, 158, 11)),
+            BorderBrush = Brushes.Black,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(4, 0, 4, 1),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, -4, -6, 0),
+            Cursor = Cursors.Hand,
+            Visibility = node.IsCollapsed ? Visibility.Visible : Visibility.Collapsed,
+            ToolTip = "Нажмите, чтобы развернуть ветвь"
+        };
+        var badgeText = new TextBlock
+        {
+            Text = $"+{node.CollapsedCount}",
+            FontSize = 9,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.Black,
+            FontFamily = new FontFamily("JetBrains Mono, Consolas")
+        };
+        collapseBadge.Child = badgeText;
+        collapseBadge.MouseLeftButtonDown += (s, e) =>
+        {
+            if (DataContext is GraphViewModel vm)
+            {
+                vm.ToggleCollapseNodeCommand.Execute(node);
+                e.Handled = true;
+            }
+        };
+        circleGrid.Children.Add(collapseBadge);
+
+        container.Children.Add(circleGrid);
 
         // Node Label underneath (centered under circle)
         var label = new TextBlock
@@ -304,8 +348,22 @@ public partial class GraphView : UserControl
             catch { }
         };
 
+        var toggleCollapseItem = new MenuItem
+        {
+            Header = node.IsCollapsed ? "Развернуть ветвь" : "Свернуть ветвь",
+            Icon = new SymbolIcon { Symbol = SymbolRegular.BranchFork24, FontSize = 14 }
+        };
+        toggleCollapseItem.Click += (s, e) =>
+        {
+            if (DataContext is GraphViewModel vm)
+            {
+                vm.ToggleCollapseNodeCommand.Execute(node);
+            }
+        };
+
         contextMenu.Opened += (s, e) =>
         {
+            toggleCollapseItem.Header = node.IsCollapsed ? "Развернуть ветвь" : "Свернуть ветвь";
             if (node.IsExpanding)
             {
                 expandMenuItem.IsEnabled = false;
@@ -324,6 +382,7 @@ public partial class GraphView : UserControl
         };
 
         contextMenu.Items.Add(expandMenuItem);
+        contextMenu.Items.Add(toggleCollapseItem);
         contextMenu.Items.Add(searchMenuItem);
         contextMenu.Items.Add(new Separator());
         contextMenu.Items.Add(copyMenuItem);
@@ -429,12 +488,28 @@ public partial class GraphView : UserControl
         {
             if (_nodeVisuals.TryGetValue(node, out var visual))
             {
+                visual.Visibility = node.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                if (!node.IsVisible) continue;
+
                 Canvas.SetLeft(visual, node.X - NodeContainerWidth / 2.0);
                 Canvas.SetTop(visual, node.Y - node.Radius);
 
-                // Update highlight state
-                if (visual is StackPanel panel && panel.Children[0] is Border border)
+                if (visual is StackPanel panel && panel.Children[0] is Grid circleGrid)
                 {
+                    Border? border = circleGrid.Children.Count > 0 ? circleGrid.Children[0] as Border : null;
+                    Border? badge = circleGrid.Children.Count > 1 ? circleGrid.Children[1] as Border : null;
+
+                    if (badge != null)
+                    {
+                        badge.Visibility = node.IsCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                        if (badge.Child is TextBlock tb)
+                        {
+                            tb.Text = $"+{node.CollapsedCount}";
+                        }
+                    }
+
+                    if (border != null)
+                    {
                     if (node.IsExpanding)
                     {
                         double pulse = (Math.Sin(DateTime.UtcNow.TimeOfDay.TotalSeconds * 7.0) + 1.0) / 2.0;
@@ -483,6 +558,7 @@ public partial class GraphView : UserControl
                 }
             }
         }
+        }
 
         // 2. Redraw edges
         DrawEdges(vm.Edges);
@@ -498,6 +574,7 @@ public partial class GraphView : UserControl
 
         foreach (var edge in edges)
         {
+            if (!edge.IsVisible || !edge.Source.IsVisible || !edge.Target.IsVisible) continue;
             if (!_edgeSpawnTimes.TryGetValue(edge.Id, out var spawnTime))
             {
                 spawnTime = now;
@@ -669,6 +746,111 @@ public partial class GraphView : UserControl
                     }
                 }
             }
+        }
+    }
+
+    private void ExportHighDpiImage()
+    {
+        if (DataContext is not GraphViewModel vm || vm.Nodes.Count == 0) return;
+
+        var visibleNodes = vm.Nodes.Where(n => n.IsVisible).ToList();
+        if (visibleNodes.Count == 0) return;
+
+        double minX = visibleNodes.Min(n => n.X) - NodeContainerWidth;
+        double maxX = visibleNodes.Max(n => n.X) + NodeContainerWidth;
+        double minY = visibleNodes.Min(n => n.Y) - 80;
+        double maxY = visibleNodes.Max(n => n.Y) + 120;
+
+        double padding = 80;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+
+        double contentWidth = Math.Max(400, maxX - minX);
+        double contentHeight = Math.Max(300, maxY - minY);
+
+        var sfd = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Экспорт снимка графа (High-DPI PNG)",
+            Filter = "PNG Изображение (*.png)|*.png|Все файлы (*.*)|*.*",
+            FileName = $"Meridian_Graph_{DateTime.Now:yyyyMMdd_HHmm}.png"
+        };
+
+        if (sfd.ShowDialog() != true) return;
+
+        try
+        {
+            double scaleFactor = 2.0;
+            int pixelWidth = (int)Math.Ceiling(contentWidth * scaleFactor);
+            int pixelHeight = (int)Math.Ceiling(contentHeight * scaleFactor);
+
+            var visual = new DrawingVisual();
+            using (var ctx = visual.RenderOpen())
+            {
+                var bgBrush = Application.Current.FindResource("AppBackgroundBrush") as Brush
+                              ?? new SolidColorBrush(Color.FromRgb(24, 26, 32));
+                ctx.DrawRectangle(bgBrush, null, new Rect(0, 0, contentWidth, contentHeight));
+
+                ctx.PushTransform(new TranslateTransform(-minX, -minY));
+
+                var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
+                var edgePenActive = new Pen(brushAccent, 2.0);
+
+                foreach (var edge in vm.Edges)
+                {
+                    if (!edge.IsVisible || !edge.Source.IsVisible || !edge.Target.IsVisible) continue;
+                    var pen = edge.IsHighlighted ? edgePenActive : _edgePenNormal;
+                    ctx.DrawLine(pen, new Point(edge.Source.X, edge.Source.Y), new Point(edge.Target.X, edge.Target.Y));
+                }
+
+                var cardBrush = Application.Current.FindResource("CardBackgroundBrush") as Brush
+                                ?? new SolidColorBrush(Color.FromRgb(32, 36, 44));
+                var primaryTextBrush = Application.Current.FindResource("PrimaryTextBrush") as Brush ?? Brushes.White;
+                var font = new Typeface(new FontFamily("JetBrains Mono, Cascadia Code, Consolas"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+
+                foreach (var node in visibleNodes)
+                {
+                    var center = new Point(node.X, node.Y);
+                    var nodeBorderPen = new Pen(new SolidColorBrush(node.AccentColor), node.Type == GraphNodeType.Target ? 2.5 : 1.5);
+                    ctx.DrawEllipse(cardBrush, nodeBorderPen, center, node.Radius, node.Radius);
+
+                    var ft = new FormattedText(
+                        node.Label,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        FlowDirection.LeftToRight,
+                        font,
+                        node.Type == GraphNodeType.Target ? 12 : 10,
+                        primaryTextBrush,
+                        VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+                    double textX = node.X - ft.Width / 2.0;
+                    double textY = node.Y + node.Radius + 4;
+                    ctx.DrawText(ft, new Point(textX, textY));
+                }
+
+                ctx.Pop();
+            }
+
+            var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                pixelWidth,
+                pixelHeight,
+                96 * scaleFactor,
+                96 * scaleFactor,
+                PixelFormats.Pbgra32);
+            rtb.Render(visual);
+
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+
+            using var fileStream = System.IO.File.Create(sfd.FileName);
+            encoder.Save(fileStream);
+
+            vm.ShowToast("Снимок сохранён", $"Граф успешно экспортирован в {System.IO.Path.GetFileName(sfd.FileName)}", isSuccess: true);
+        }
+        catch (Exception ex)
+        {
+            vm.ShowErrorToast("Ошибка экспорта снимка", ex.Message);
         }
     }
 }

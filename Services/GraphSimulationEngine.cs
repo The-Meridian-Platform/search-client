@@ -39,10 +39,12 @@ public class GraphSimulationEngine
         for (int i = 0; i < count; i++)
         {
             var nodeA = nodes[i];
+            if (!nodeA.IsVisible) continue;
 
             for (int j = i + 1; j < count; j++)
             {
                 var nodeB = nodes[j];
+                if (!nodeB.IsVisible) continue;
 
                 double dx = nodeA.X - nodeB.X;
                 double dy = nodeA.Y - nodeB.Y;
@@ -82,8 +84,10 @@ public class GraphSimulationEngine
         for (int i = 0; i < edgeCount; i++)
         {
             var edge = edges[i];
+            if (!edge.IsVisible) continue;
             var source = edge.Source;
             var target = edge.Target;
+            if (!source.IsVisible || !target.IsVisible) continue;
 
             double dx = target.X - source.X;
             double dy = target.Y - source.Y;
@@ -110,6 +114,7 @@ public class GraphSimulationEngine
         for (int i = 0; i < count; i++)
         {
             var node = nodes[i];
+            if (!node.IsVisible) continue;
 
             if (node.IsPinned)
             {

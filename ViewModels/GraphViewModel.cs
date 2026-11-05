@@ -618,7 +618,13 @@ public partial class GraphViewModel : ObservableObject
 
         double ComputeWidth(GraphNode node)
         {
-            var children = treeChildren[node];
+            if (node.IsCollapsed)
+            {
+                subtreeWidths[node] = nodeSpacing;
+                return nodeSpacing;
+            }
+
+            var children = treeChildren[node].Where(c => c.IsVisible).ToList();
             if (children.Count == 0)
             {
                 subtreeWidths[node] = nodeSpacing;
@@ -631,7 +637,7 @@ public partial class GraphViewModel : ObservableObject
             foreach (var group in typeGroups)
             {
                 var groupItems = group.ToList();
-                bool isLeafGroup = groupItems.All(item => treeChildren[item].Count == 0);
+                bool isLeafGroup = groupItems.All(item => !treeChildren[item].Any(c => c.IsVisible));
 
                 if (isLeafGroup && groupItems.Count >= 3)
                 {
@@ -673,7 +679,13 @@ public partial class GraphViewModel : ObservableObject
             node.Vx = 0;
             node.Vy = 0;
 
-            var children = treeChildren[node];
+            if (node.IsCollapsed)
+            {
+                node.X = leftX + subtreeWidths[node] / 2.0;
+                return;
+            }
+
+            var children = treeChildren[node].Where(c => c.IsVisible).ToList();
             if (children.Count == 0)
             {
                 node.X = leftX + subtreeWidths[node] / 2.0;
@@ -688,7 +700,7 @@ public partial class GraphViewModel : ObservableObject
             foreach (var group in typeGroups)
             {
                 var groupItems = group.ToList();
-                bool isLeafGroup = groupItems.All(item => treeChildren[item].Count == 0);
+                bool isLeafGroup = groupItems.All(item => !treeChildren[item].Any(c => c.IsVisible));
 
                 if (isLeafGroup && groupItems.Count >= 3)
                 {
@@ -813,9 +825,57 @@ public partial class GraphViewModel : ObservableObject
     };
 
     [RelayCommand]
+    public void ToggleCollapseNode(GraphNode? node)
+    {
+        if (node == null) return;
+
+        var visitedDescendants = new HashSet<GraphNode>();
+        var queue = new Queue<GraphNode>();
+        queue.Enqueue(node);
+
+        var directOutEdges = new Dictionary<GraphNode, List<GraphNode>>();
+        foreach (var n in Nodes) directOutEdges[n] = new List<GraphNode>();
+        foreach (var e in Edges)
+        {
+            if (directOutEdges.ContainsKey(e.Source))
+            {
+                directOutEdges[e.Source].Add(e.Target);
+            }
+        }
+
+        while (queue.Count > 0)
+        {
+            var curr = queue.Dequeue();
+            foreach (var ch in directOutEdges[curr])
+            {
+                if (visitedDescendants.Add(ch))
+                {
+                    queue.Enqueue(ch);
+                }
+            }
+        }
+
+        if (visitedDescendants.Count == 0) return;
+
+        node.IsCollapsed = !node.IsCollapsed;
+        node.CollapsedCount = node.IsCollapsed ? visitedDescendants.Count : 0;
+
+        foreach (var desc in visitedDescendants)
+        {
+            desc.IsVisible = !node.IsCollapsed;
+        }
+
+        foreach (var edge in Edges)
+        {
+            edge.IsVisible = edge.Source.IsVisible && edge.Target.IsVisible;
+        }
+
+        OrganizeAndFreezeLayout();
+    }
+
+    [RelayCommand]
     public void ResetLayout()
     {
-        // Place nodes radially around center
         double cx = 400, cy = 300;
         int count = Nodes.Count;
         for (int i = 0; i < count; i++)
@@ -1453,6 +1513,80 @@ public partial class GraphViewModel : ObservableObject
         finally
         {
             IsLoadingSession = false;
+        }
+    }
+
+    public event Action? RequestExportHighDpiImage;
+
+    [RelayCommand]
+    public void ExportGraphImage()
+    {
+        RequestExportHighDpiImage?.Invoke();
+    }
+
+    [RelayCommand]
+    public void ExportMarkdownReport()
+    {
+        EnsureCurrentInvestigationExists();
+        string title = CurrentInvestigation?.Title ?? TargetDisplay;
+        var sfd = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Экспорт отчёта расследования (Markdown)",
+            Filter = "Markdown отчёт (*.md)|*.md|Все файлы (*.*)|*.*",
+            FileName = $"Investigation_Report_{SanitizeFileName(title)}_{DateTime.Now:yyyyMMdd_HHmm}.md"
+        };
+
+        if (sfd.ShowDialog() == true)
+        {
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"# OSINT Расследование: {title}");
+                sb.AppendLine();
+                sb.AppendLine($"- **Дата генерации:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine($"- **Цель:** {TargetDisplay}");
+                sb.AppendLine($"- **Всего узлов в графе:** {Nodes.Count}");
+                sb.AppendLine($"- **Всего связей:** {Edges.Count}");
+                sb.AppendLine();
+                sb.AppendLine("## 1. Сводка по категориям");
+                sb.AppendLine();
+
+                var grouped = Nodes.GroupBy(n => n.Type).OrderBy(g => GetNodeTypePriority(g.Key));
+                foreach (var grp in grouped)
+                {
+                    sb.AppendLine($"### {grp.First().TypeNameRu} ({grp.Count()})");
+                    foreach (var n in grp.OrderBy(x => x.Label))
+                    {
+                        sb.AppendLine($"- **{n.Label}** — {n.SubLabel}");
+                        if (n.Properties.Count > 0)
+                        {
+                            foreach (var (k, v) in n.Properties)
+                            {
+                                if (!string.IsNullOrWhiteSpace(v))
+                                    sb.AppendLine($"  - *{k}*: {v}");
+                            }
+                        }
+                    }
+                    sb.AppendLine();
+                }
+
+                sb.AppendLine("## 2. Карта связей");
+                sb.AppendLine();
+                sb.AppendLine("| Источник | Связь | Назначение |");
+                sb.AppendLine("| :--- | :---: | :--- |");
+                foreach (var edge in Edges)
+                {
+                    sb.AppendLine($"| {edge.Source.Label} | {edge.Label} | {edge.Target.Label} |");
+                }
+
+                System.IO.File.WriteAllText(sfd.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+                _toastService.ShowSuccess("Экспорт отчёта", $"Отчёт успешно сохранён: {System.IO.Path.GetFileName(sfd.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                _logService.LogError("Report", $"Ошибка при создании Markdown отчёта: {ex.Message}", ex);
+                ShowErrorToast("Ошибка экспорта", ex.Message);
+            }
         }
     }
 

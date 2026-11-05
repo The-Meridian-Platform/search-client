@@ -380,6 +380,22 @@
                         </Grid>
                     </Border>
 
+                    <!-- Export High-DPI Image Button -->
+                    <Button Command="{Binding ExportGraphImageCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Экспорт качественного снимка графа (High-DPI PNG)"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="Camera24" FontSize="15" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+
+                    <!-- Export Markdown Report Button -->
+                    <Button Command="{Binding ExportMarkdownReportCommand}"
+                            Style="{StaticResource GraphGhostButtonStyle}"
+                            ToolTip="Экспорт структурированного отчёта расследования (.md)"
+                            Margin="0,0,6,0">
+                        <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="15" Foreground="#61AFEF" />
+                    </Button>
+
                     <!-- Export Investigation Button -->
                     <Button Command="{Binding ExportInvestigationCommand}"
                             Style="{StaticResource GraphGhostButtonStyle}"
