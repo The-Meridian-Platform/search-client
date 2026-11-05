@@ -256,6 +256,21 @@
                             <TextBlock Text="{Binding EdgesCount}" FontSize="11" FontWeight="Black" Foreground="{DynamicResource PrimaryTextBrush}" />
                         </StackPanel>
                     </Border>
+
+                    <!-- Canvas limit reached warning chip -->
+                    <Border Background="#2B1A22"
+                            BorderBrush="#FF3366"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsCanvasLimitReached, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Достигнут лимит безопасного отображения 200 узлов. Рекомендуется свернуть кластеры">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Warning24" FontSize="13" Foreground="#FF3366" Margin="0,0,6,0" />
+                            <TextBlock Text="Лимит холста: 200 узлов" FontSize="10" FontWeight="Bold" Foreground="#FF3366" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Right: Node Search & Canvas Controls -->

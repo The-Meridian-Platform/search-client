@@ -30,7 +30,10 @@ public partial class GraphViewModel : ObservableObject
 
     private readonly Dictionary<string, GraphNode> _nodeMap = new();
     private readonly HashSet<string> _visitedTargets = new(StringComparer.OrdinalIgnoreCase);
-    private const int MaxCanvasNodes = 150;
+    private const int MaxCanvasNodes = 200;
+
+    [ObservableProperty]
+    private bool _isCanvasLimitReached;
 
     private static readonly HashSet<string> SupernodeBlacklist = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -213,6 +216,8 @@ public partial class GraphViewModel : ObservableObject
         _physicsTimer.Tick += OnPhysicsTick;
         _physicsTimer.Start();
 
+        _physics.SimulationStabilized += OnSimulationStabilized;
+
         // Subscribe to live search findings
         ((INotifyCollectionChanged)_searchViewModel.Findings).CollectionChanged += OnLiveFindingsChanged;
         _searchViewModel.PropertyChanged += OnSearchViewModelPropertyChanged;
@@ -268,17 +273,46 @@ public partial class GraphViewModel : ObservableObject
             {
                 AddFindingToGraph(item, TargetDisplay);
             }
-            _physics.WakeUp();
+            WakeUpPhysics();
             UpdateCounts();
         }
+    }
+
+    private void OnSimulationStabilized()
+    {
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            if (_physicsTimer.IsEnabled)
+            {
+                _physicsTimer.Stop();
+            }
+            _toastService.ShowInfo("Физика", "Раскладка зафиксирована. Физика остановлена");
+        });
+    }
+
+    public void WakeUpPhysics()
+    {
+        _physics.WakeUp();
+        if (IsPhysicsRunning && !_physicsTimer.IsEnabled)
+        {
+            _physicsTimer.Start();
+        }
+    }
+
+    public void StepLocalPhysics(GraphNode node)
+    {
+        _physics.StepLocal(node, Edges);
     }
 
     private void OnPhysicsTick(object? sender, EventArgs e)
     {
         if (!IsPhysicsRunning) return;
 
-        // Run one physics step
         double energy = _physics.Step(Nodes, Edges, 400, 300);
+        if (_physics.IsSleeping && _physicsTimer.IsEnabled)
+        {
+            _physicsTimer.Stop();
+        }
     }
 
     public void SyncFromLiveSearch()
@@ -363,7 +397,7 @@ public partial class GraphViewModel : ObservableObject
                 {
                     AddFindingToGraph(new FindingItemViewModel(finding), TargetDisplay);
                 }
-                _physics.WakeUp();
+                WakeUpPhysics();
                 UpdateCounts();
                 RequestCenterView?.Invoke();
                 _logService.LogInfo("Graph", $"Загружен граф для сессии [{sessionId}], узлов: {Nodes.Count}, связей: {Edges.Count}");
@@ -381,6 +415,12 @@ public partial class GraphViewModel : ObservableObject
 
     private void AddFindingToGraph(FindingItemViewModel finding, string target)
     {
+        if (Nodes.Count >= MaxCanvasNodes)
+        {
+            IsCanvasLimitReached = true;
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(target) && target != "—")
         {
             _visitedTargets.Add(SanitizeTarget(target));
@@ -394,6 +434,11 @@ public partial class GraphViewModel : ObservableObject
         {
             if (!Nodes.Contains(node))
             {
+                if (Nodes.Count >= MaxCanvasNodes)
+                {
+                    IsCanvasLimitReached = true;
+                    break;
+                }
                 Nodes.Add(node);
             }
         }
@@ -415,6 +460,7 @@ public partial class GraphViewModel : ObservableObject
         _visitedTargets.Clear();
         SelectedNode = null;
         HasSelectedNode = false;
+        IsCanvasLimitReached = false;
         UpdateCounts();
     }
 
@@ -549,7 +595,14 @@ public partial class GraphViewModel : ObservableObject
         IsPhysicsRunning = !IsPhysicsRunning;
         if (IsPhysicsRunning)
         {
-            _physics.WakeUp();
+            WakeUpPhysics();
+        }
+        else
+        {
+            if (_physicsTimer.IsEnabled)
+            {
+                _physicsTimer.Stop();
+            }
         }
     }
 
@@ -559,6 +612,10 @@ public partial class GraphViewModel : ObservableObject
         if (Nodes.Count == 0) return;
 
         IsPhysicsRunning = false;
+        if (_physicsTimer.IsEnabled)
+        {
+            _physicsTimer.Stop();
+        }
 
         foreach (var node in Nodes)
         {
@@ -1288,9 +1345,10 @@ public partial class GraphViewModel : ObservableObject
             {
                 if (Nodes.Count >= MaxCanvasNodes)
                 {
+                    IsCanvasLimitReached = true;
                     ShowErrorToast(
                         LocalizationService.Instance.GetString("Graph_Toast_LimitTitle"),
-                        LocalizationService.Instance.GetString("Graph_Toast_LimitReached"));
+                        "Отображены первые 200 узлов (лимит холста). Рекомендуется свернуть кластеры");
                     break;
                 }
 
@@ -1317,6 +1375,12 @@ public partial class GraphViewModel : ObservableObject
                     {
                         if (ct.IsCancellationRequested) return;
 
+                        if (Nodes.Count >= MaxCanvasNodes)
+                        {
+                            IsCanvasLimitReached = true;
+                            return;
+                        }
+
                         var newEdges = new List<GraphEdge>();
                         bool mergeShared = _settingsService.Settings.MergeSharedGraphEntities;
                         GraphDataMapper.MapFindingToGraph(findingVm, pivotTarget, _nodeMap, newEdges, _random, node.X, node.Y, mergeShared);
@@ -1325,6 +1389,11 @@ public partial class GraphViewModel : ObservableObject
                         {
                             if (!Nodes.Contains(n))
                             {
+                                if (Nodes.Count >= MaxCanvasNodes)
+                                {
+                                    IsCanvasLimitReached = true;
+                                    break;
+                                }
                                 n.ExpansionDepth = node.ExpansionDepth + 1;
                                 Nodes.Add(n);
                             }
@@ -1350,7 +1419,7 @@ public partial class GraphViewModel : ObservableObject
 
                         PivotFindingsCount++;
                         UpdateCounts();
-                        _physics.WakeUp();
+                        WakeUpPhysics();
 
                         if (CurrentInvestigation != null)
                         {

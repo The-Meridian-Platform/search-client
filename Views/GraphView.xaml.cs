@@ -31,13 +31,28 @@ public partial class GraphView : UserControl
     private GraphNode? _draggedNode;
     private Point _nodeDragOffset;
 
+    private SolidColorBrush _brushAccent = new(Color.FromRgb(6, 182, 212));
+    private SolidColorBrush _brushNormal = new(Color.FromArgb(90, 255, 255, 255));
+    private SolidColorBrush _brushThreat = new(Color.FromRgb(255, 51, 102));
+    private SolidColorBrush _minimapDotThreatBrush = new(Color.FromRgb(255, 51, 102));
+    private SolidColorBrush _minimapVpStrokeBrush = new(Color.FromArgb(200, 6, 182, 212));
+    private SolidColorBrush _minimapVpFillBrush = new(Color.FromArgb(30, 6, 182, 212));
     private Pen _edgePenNormal = new(new SolidColorBrush(Color.FromArgb(50, 255, 255, 255)), 1.2);
     private Pen _edgePenHighlighted = new(new SolidColorBrush(Color.FromArgb(200, 6, 182, 212)), 2.2);
+
+    private readonly List<Line> _edgeLinesPool = new();
+    private bool _isLowDetailMode;
 
     public GraphView()
     {
         InitializeComponent();
 
+        _brushAccent.Freeze();
+        _brushNormal.Freeze();
+        _brushThreat.Freeze();
+        _minimapDotThreatBrush.Freeze();
+        _minimapVpStrokeBrush.Freeze();
+        _minimapVpFillBrush.Freeze();
         _edgePenNormal.Freeze();
         _edgePenHighlighted.Freeze();
 
@@ -55,12 +70,38 @@ public partial class GraphView : UserControl
     {
         Dispatcher.InvokeAsync(() =>
         {
+            UpdateThemeBrushes();
             RebuildAllVisuals(animate: false);
         });
     }
 
+    private void UpdateThemeBrushes()
+    {
+        if (Application.Current.FindResource("AccentBrush") is SolidColorBrush ab)
+        {
+            var c = ab.Clone();
+            c.Freeze();
+            _brushAccent = c;
+        }
+
+        if (Application.Current.FindResource("GraphEdgeBrush") is SolidColorBrush eb)
+        {
+            var c = eb.Clone();
+            c.Freeze();
+            _brushNormal = c;
+        }
+        else if (Application.Current.FindResource("SecondaryTextBrush") is SolidColorBrush sb)
+        {
+            var c = sb.Clone();
+            c.Freeze();
+            _brushNormal = c;
+        }
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        UpdateThemeBrushes();
+
         if (DataContext is GraphViewModel vm)
         {
             vm.RequestCenterView -= CenterGraphOnScreen;
@@ -104,6 +145,7 @@ public partial class GraphView : UserControl
             _nodeVisuals.Clear();
             _edgeSpawnTimes.Clear();
             _edgeCanvas.Children.Clear();
+            _edgeLinesPool.Clear();
             return;
         }
 
@@ -263,7 +305,8 @@ public partial class GraphView : UserControl
             MaxWidth = NodeContainerWidth - 10,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(0, 4, 0, 0),
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Visibility = _isLowDetailMode ? Visibility.Collapsed : Visibility.Visible
         };
         container.Children.Add(label);
 
@@ -282,6 +325,8 @@ public partial class GraphView : UserControl
                     e.Handled = true;
                     return;
                 }
+
+                vm.WakeUpPhysics();
             }
 
             _draggedNode = node;
@@ -300,6 +345,11 @@ public partial class GraphView : UserControl
                 node.Y = pos.Y - _nodeDragOffset.Y;
                 node.Vx = 0;
                 node.Vy = 0;
+
+                if (DataContext is GraphViewModel vm)
+                {
+                    vm.StepLocalPhysics(node);
+                }
             }
         };
 
@@ -592,19 +642,15 @@ public partial class GraphView : UserControl
 
     private void DrawEdges(IReadOnlyList<GraphEdge> edges)
     {
-        _edgeCanvas.Children.Clear();
-
-        var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
-        var brushNormal = Application.Current.FindResource("GraphEdgeBrush") as SolidColorBrush
-                          ?? (Application.Current.FindResource("SecondaryTextBrush") as SolidColorBrush ?? Brushes.Gray);
-        var brushThreat = new SolidColorBrush(Color.FromRgb(255, 51, 102));
-        var edgePenActive = new Pen(brushAccent, 2.0);
-        var edgePenThreat = new Pen(brushThreat, 2.5);
         var now = DateTime.UtcNow;
+        int activeLineIndex = 0;
 
-        foreach (var edge in edges)
+        int edgeCount = edges.Count;
+        for (int i = 0; i < edgeCount; i++)
         {
+            var edge = edges[i];
             if (!edge.IsVisible || !edge.Source.IsVisible || !edge.Target.IsVisible) continue;
+
             if (!_edgeSpawnTimes.TryGetValue(edge.Id, out var spawnTime))
             {
                 spawnTime = now;
@@ -614,34 +660,54 @@ public partial class GraphView : UserControl
             double ageMs = (now - spawnTime).TotalMilliseconds;
             double fadeProgress = Math.Clamp(ageMs / 350.0, 0.05, 1.0);
 
-            Brush strokeBrush = brushNormal;
+            Brush strokeBrush = _brushNormal;
             double thickness = 1.2;
             double opacity = 0.55;
 
             if (edge.IsThreatPath)
             {
-                strokeBrush = edgePenThreat.Brush;
+                strokeBrush = _brushThreat;
                 thickness = 2.5;
                 opacity = 1.0;
             }
             else if (edge.IsHighlighted)
             {
-                strokeBrush = edgePenActive.Brush;
+                strokeBrush = _brushAccent;
                 thickness = 2.0;
                 opacity = 0.95;
             }
 
-            var line = new Line
+            Line line;
+            if (activeLineIndex < _edgeLinesPool.Count)
             {
-                X1 = edge.Source.X,
-                Y1 = edge.Source.Y,
-                X2 = edge.Target.X,
-                Y2 = edge.Target.Y,
-                Stroke = strokeBrush,
-                StrokeThickness = thickness,
-                Opacity = opacity * fadeProgress
-            };
-            _edgeCanvas.Children.Add(line);
+                line = _edgeLinesPool[activeLineIndex];
+                if (line.Visibility != Visibility.Visible) line.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                line = new Line();
+                _edgeLinesPool.Add(line);
+                _edgeCanvas.Children.Add(line);
+            }
+
+            line.X1 = edge.Source.X;
+            line.Y1 = edge.Source.Y;
+            line.X2 = edge.Target.X;
+            line.Y2 = edge.Target.Y;
+            if (!ReferenceEquals(line.Stroke, strokeBrush)) line.Stroke = strokeBrush;
+            if (Math.Abs(line.StrokeThickness - thickness) > 0.01) line.StrokeThickness = thickness;
+            line.Opacity = opacity * fadeProgress;
+
+            activeLineIndex++;
+        }
+
+        for (int i = activeLineIndex; i < _edgeLinesPool.Count; i++)
+        {
+            var unused = _edgeLinesPool[i];
+            if (unused.Visibility != Visibility.Collapsed)
+            {
+                unused.Visibility = Visibility.Collapsed;
+            }
         }
     }
 
@@ -660,7 +726,25 @@ public partial class GraphView : UserControl
 
         matrix.ScaleAt(zoomFactor, zoomFactor, mousePos.X, mousePos.Y);
         canvasTransform.Matrix = matrix;
+        UpdateLod(matrix.M11);
         e.Handled = true;
+    }
+
+    private void UpdateLod(double zoomScale)
+    {
+        bool lowDetail = zoomScale < 0.55;
+        if (_isLowDetailMode == lowDetail) return;
+
+        _isLowDetailMode = lowDetail;
+        var vis = lowDetail ? Visibility.Collapsed : Visibility.Visible;
+
+        foreach (var visual in _nodeVisuals.Values)
+        {
+            if (visual is StackPanel panel && panel.Children.Count > 1 && panel.Children[1] is TextBlock tb)
+            {
+                tb.Visibility = vis;
+            }
+        }
     }
 
     private void CanvasViewport_MouseDown(object sender, MouseButtonEventArgs e)
@@ -745,6 +829,7 @@ public partial class GraphView : UserControl
         matrix.Translate(viewWidth / 2.0 - centerX * scale, viewHeight / 2.0 - centerY * scale);
 
         canvasTransform.Matrix = matrix;
+        UpdateLod(matrix.M11);
     }
 
     #endregion
@@ -796,12 +881,24 @@ public partial class GraphView : UserControl
             double nx = offX + (node.X - minX) * scale;
             double ny = offY + (node.Y - minY) * scale;
 
+            Brush dotBrush;
+            if (node.IsThreat)
+            {
+                dotBrush = _minimapDotThreatBrush;
+            }
+            else
+            {
+                var b = new SolidColorBrush(node.AccentColor);
+                b.Freeze();
+                dotBrush = b;
+            }
+
             double dotSize = node.Type == GraphNodeType.Target ? 6.0 : 4.0;
             var dot = new Ellipse
             {
                 Width = dotSize,
                 Height = dotSize,
-                Fill = new SolidColorBrush(node.IsThreat ? Color.FromRgb(255, 51, 102) : node.AccentColor)
+                Fill = dotBrush
             };
             Canvas.SetLeft(dot, nx - dotSize / 2.0);
             Canvas.SetTop(dot, ny - dotSize / 2.0);
@@ -829,9 +926,9 @@ public partial class GraphView : UserControl
             {
                 Width = Math.Max(rw, 8.0),
                 Height = Math.Max(rh, 8.0),
-                Stroke = new SolidColorBrush(Color.FromArgb(200, 6, 182, 212)),
+                Stroke = _minimapVpStrokeBrush,
                 StrokeThickness = 1.2,
-                Fill = new SolidColorBrush(Color.FromArgb(30, 6, 182, 212)),
+                Fill = _minimapVpFillBrush,
                 IsHitTestVisible = false
             };
             Canvas.SetLeft(viewportRect, rx);

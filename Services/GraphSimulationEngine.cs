@@ -13,12 +13,53 @@ public class GraphSimulationEngine
     public double Damping { get; set; } = 0.85;
     public double MaxVelocity { get; set; } = 14.0;
     public double EnergyThreshold { get; set; } = 0.05;
+    public int MaxIterations { get; set; } = 140;
 
     public bool IsSleeping { get; private set; }
+    public int IterationCount { get; private set; }
+
+    public event Action? SimulationStabilized;
 
     public void WakeUp()
     {
         IsSleeping = false;
+        IterationCount = 0;
+    }
+
+    public void StepLocal(GraphNode draggedNode, IReadOnlyList<GraphEdge> edges, double dt = 0.8)
+    {
+        if (draggedNode == null) return;
+
+        int edgeCount = edges.Count;
+        for (int i = 0; i < edgeCount; i++)
+        {
+            var edge = edges[i];
+            if (!edge.IsVisible) continue;
+            if (edge.Source != draggedNode && edge.Target != draggedNode) continue;
+
+            var neighbor = edge.Source == draggedNode ? edge.Target : edge.Source;
+            if (!neighbor.IsVisible || neighbor.IsPinned) continue;
+
+            double dx = neighbor.X - draggedNode.X;
+            double dy = neighbor.Y - draggedNode.Y;
+            double dist = Math.Sqrt(dx * dx + dy * dy);
+            if (dist < 1.0) dist = 1.0;
+
+            double desired = DesiredEdgeDistance + (draggedNode.Radius + neighbor.Radius);
+            double delta = dist - desired;
+            double force = delta * SpringConstant * 0.4;
+
+            double fx = (dx / dist) * force;
+            double fy = (dy / dist) * force;
+
+            neighbor.Vx -= fx;
+            neighbor.Vy -= fy;
+            neighbor.Vx *= Damping;
+            neighbor.Vy *= Damping;
+
+            neighbor.X += neighbor.Vx * dt;
+            neighbor.Y += neighbor.Vy * dt;
+        }
     }
 
     public double Step(
@@ -33,9 +74,9 @@ public class GraphSimulationEngine
             return 0;
         }
 
+        IterationCount++;
         int count = nodes.Count;
 
-        // 1. Repulsion between all pairs of nodes (Coulomb)
         for (int i = 0; i < count; i++)
         {
             var nodeA = nodes[i];
@@ -52,20 +93,18 @@ public class GraphSimulationEngine
 
                 if (distSq < 1.0)
                 {
-                    // Avoid singularity if nodes coincide
                     dx = (i % 2 == 0 ? 1 : -1) * 2.0;
                     dy = (j % 2 == 0 ? 1 : -1) * 2.0;
                     distSq = dx * dx + dy * dy;
                 }
 
                 double dist = Math.Sqrt(distSq);
-                if (dist > 650.0) continue; // Cut off distant nodes for speed
+                if (dist > 650.0) continue;
 
                 double minDistance = nodeA.Radius + nodeB.Radius + 15.0;
                 double force = RepulsionConstant / (distSq + 20.0);
                 if (dist < minDistance)
                 {
-                    // Strong pushback if overlapping
                     force += (minDistance - dist) * 1.2;
                 }
 
@@ -79,7 +118,6 @@ public class GraphSimulationEngine
             }
         }
 
-        // 2. Spring attraction along edges (Hooke)
         int edgeCount = edges.Count;
         for (int i = 0; i < edgeCount; i++)
         {
@@ -108,7 +146,6 @@ public class GraphSimulationEngine
             target.Vy -= fy;
         }
 
-        // 3. Gravity toward center + Damping + Integration
         double totalKineticEnergy = 0.0;
 
         for (int i = 0; i < count; i++)
@@ -123,17 +160,14 @@ public class GraphSimulationEngine
                 continue;
             }
 
-            // Pull gently to center
             double gx = (centerX - node.X) * GravityConstant;
             double gy = (centerY - node.Y) * GravityConstant;
             node.Vx += gx;
             node.Vy += gy;
 
-            // Damping / Friction
             node.Vx *= Damping;
             node.Vy *= Damping;
 
-            // Clamp velocity
             double speed = Math.Sqrt(node.Vx * node.Vx + node.Vy * node.Vy);
             if (speed > MaxVelocity)
             {
@@ -141,17 +175,16 @@ public class GraphSimulationEngine
                 node.Vy = (node.Vy / speed) * MaxVelocity;
             }
 
-            // Move
             node.X += node.Vx * dt;
             node.Y += node.Vy * dt;
 
             totalKineticEnergy += (node.Vx * node.Vx + node.Vy * node.Vy);
         }
 
-        // Sleep when stable to conserve CPU
-        if (totalKineticEnergy < EnergyThreshold)
+        if (totalKineticEnergy < EnergyThreshold || IterationCount >= MaxIterations)
         {
             IsSleeping = true;
+            SimulationStabilized?.Invoke();
         }
 
         return totalKineticEnergy;
