@@ -181,15 +181,6 @@
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                    VerticalAlignment="Center" />
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Border Background="{DynamicResource SubtleAccentBrush}"
-                                    BorderBrush="{DynamicResource BorderAccentBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="6,2">
-                                <TextBlock Text="{DynamicResource Welcome_AutosaveBadge}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
-                            </Border>
-                        </StackPanel>
                     </Grid>
 
                     <Border Grid.Row="1"
