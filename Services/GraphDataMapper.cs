@@ -506,6 +506,11 @@ public class GraphDataMapper
             string normDom = !string.IsNullOrWhiteSpace(disp.Domain) ? NormalizeHost(disp.Domain) : normalizedTarget;
             string nodeId = $"disposable:{normDom}";
             var dispNode = GetOrCreateNode(nodeId, label, sub, nodeType, targetNode, finding.RawJson, props);
+            if (disp.IsDisposable)
+            {
+                dispNode.IsThreat = true;
+                dispNode.ThreatDescription = $"Обнаружен временный/одноразовый почтовый домен ({disp.Domain})";
+            }
             AddEdgeIfMissing(targetNode, dispNode, disp.IsDisposable ? "Одноразовая почта" : "Легитимная почта");
         }
 
@@ -740,6 +745,11 @@ public class GraphDataMapper
                     { "Цель IP", ip }
                 };
                 var portNode = GetOrCreateNode(portNodeId, portLabel, "Открытый порт", GraphNodeType.Port, ipNode, null, portProps);
+                if (port is 21 or 23 or 445 or 3389 or 5900)
+                {
+                    portNode.IsThreat = true;
+                    portNode.ThreatDescription = $"Потенциально небезопасный открытый сервис ({srv}) на порту {port}";
+                }
                 AddEdgeIfMissing(ipNode, portNode, $"Порт {port}");
             }
 
@@ -771,6 +781,8 @@ public class GraphDataMapper
                         { "Цель IP", ip }
                     };
                     var vulnNode = GetOrCreateNode(vulnNodeId, cve, "Критическая уязвимость", GraphNodeType.Warning, ipNode, null, vulnProps);
+                    vulnNode.IsThreat = true;
+                    vulnNode.ThreatDescription = $"Критическая уязвимость {cve} на IP {ip}";
                     AddEdgeIfMissing(ipNode, vulnNode, "Уязвимость");
                 }
             }

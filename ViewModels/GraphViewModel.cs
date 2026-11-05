@@ -435,18 +435,59 @@ public partial class GraphViewModel : ObservableObject
         foreach (var edge in Edges)
         {
             edge.IsHighlighted = false;
+            edge.IsThreatPath = false;
         }
 
         if (value != null)
         {
-            // Highlight connected edges and neighboring nodes
-            foreach (var edge in Edges)
+            if (value.IsThreat)
             {
-                if (edge.Source == value || edge.Target == value)
+                HighlightThreatPathToRoots(value);
+            }
+            else
+            {
+                foreach (var edge in Edges)
                 {
+                    if (edge.Source == value || edge.Target == value)
+                    {
+                        edge.IsHighlighted = true;
+                        edge.Source.IsHighlighted = true;
+                        edge.Target.IsHighlighted = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private void HighlightThreatPathToRoots(GraphNode threatNode)
+    {
+        var parentEdges = new Dictionary<GraphNode, List<GraphEdge>>();
+        foreach (var edge in Edges)
+        {
+            if (!parentEdges.ContainsKey(edge.Target)) parentEdges[edge.Target] = new List<GraphEdge>();
+            parentEdges[edge.Target].Add(edge);
+        }
+
+        var queue = new Queue<GraphNode>();
+        var visited = new HashSet<GraphNode>();
+        queue.Enqueue(threatNode);
+        visited.Add(threatNode);
+        threatNode.IsHighlighted = true;
+
+        while (queue.Count > 0)
+        {
+            var curr = queue.Dequeue();
+            if (parentEdges.TryGetValue(curr, out var incoming))
+            {
+                foreach (var edge in incoming)
+                {
+                    edge.IsThreatPath = true;
                     edge.IsHighlighted = true;
                     edge.Source.IsHighlighted = true;
-                    edge.Target.IsHighlighted = true;
+                    if (visited.Add(edge.Source))
+                    {
+                        queue.Enqueue(edge.Source);
+                    }
                 }
             }
         }

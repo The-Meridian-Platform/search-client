@@ -87,6 +87,12 @@ public partial class GraphNode : ObservableObject
     [ObservableProperty]
     private bool _isVisible = true;
 
+    [ObservableProperty]
+    private bool _isThreat;
+
+    [ObservableProperty]
+    private string _threatDescription = string.Empty;
+
     public double Vx { get; set; }
     public double Vy { get; set; }
     public double Mass { get; set; } = 1.0;
@@ -214,6 +220,9 @@ public partial class GraphEdge : ObservableObject
 
     [ObservableProperty]
     private bool _isHighlighted;
+
+    [ObservableProperty]
+    private bool _isThreatPath;
 
     [ObservableProperty]
     private bool _isVisible = true;

@@ -544,6 +544,19 @@ public partial class GraphView : UserControl
                             Opacity = 0.75
                         };
                     }
+                    else if (node.IsThreat)
+                    {
+                        double pulse = (Math.Sin(DateTime.UtcNow.TimeOfDay.TotalSeconds * 5.0) + 1.0) / 2.0;
+                        border.BorderThickness = new Thickness(2.0 + pulse * 1.5);
+                        border.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102));
+                        border.Effect = new DropShadowEffect
+                        {
+                            Color = Color.FromRgb(255, 51, 102),
+                            BlurRadius = 14.0 + pulse * 16.0,
+                            ShadowDepth = 0,
+                            Opacity = 0.8 + pulse * 0.2
+                        };
+                    }
                     else if (node.Type != GraphNodeType.Target)
                     {
                         if (border.Effect is DropShadowEffect effect && effect.HasAnimatedProperties)
@@ -569,7 +582,9 @@ public partial class GraphView : UserControl
         _edgeCanvas.Children.Clear();
 
         var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
+        var brushThreat = new SolidColorBrush(Color.FromRgb(255, 51, 102));
         var edgePenActive = new Pen(brushAccent, 2.0);
+        var edgePenThreat = new Pen(brushThreat, 2.5);
         var now = DateTime.UtcNow;
 
         foreach (var edge in edges)
@@ -584,15 +599,32 @@ public partial class GraphView : UserControl
             double ageMs = (now - spawnTime).TotalMilliseconds;
             double fadeProgress = Math.Clamp(ageMs / 350.0, 0.05, 1.0);
 
+            Brush strokeBrush = _edgePenNormal.Brush;
+            double thickness = 1.2;
+            double opacity = 0.45;
+
+            if (edge.IsThreatPath)
+            {
+                strokeBrush = edgePenThreat.Brush;
+                thickness = 2.5;
+                opacity = 1.0;
+            }
+            else if (edge.IsHighlighted)
+            {
+                strokeBrush = edgePenActive.Brush;
+                thickness = 2.0;
+                opacity = 0.95;
+            }
+
             var line = new Line
             {
                 X1 = edge.Source.X,
                 Y1 = edge.Source.Y,
                 X2 = edge.Target.X,
                 Y2 = edge.Target.Y,
-                Stroke = edge.IsHighlighted ? edgePenActive.Brush : _edgePenNormal.Brush,
-                StrokeThickness = edge.IsHighlighted ? 2.0 : 1.2,
-                Opacity = (edge.IsHighlighted ? 0.95 : 0.45) * fadeProgress
+                Stroke = strokeBrush,
+                StrokeThickness = thickness,
+                Opacity = opacity * fadeProgress
             };
             _edgeCanvas.Children.Add(line);
         }
