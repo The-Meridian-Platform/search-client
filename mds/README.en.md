@@ -1,6 +1,6 @@
 # 🖥️ Meridian OSINT Client — Documentation
 
-> Comprehensive technical documentation for Meridian OSINT Client: modern WPF desktop application for real-time cyber reconnaissance streaming.
+> Comprehensive technical documentation for Meridian OSINT Client: modern C# WPF desktop application for real-time cyber intelligence streaming, interactive force-directed graph visualization, and multi-session investigation workflows.
 
 ---
 
@@ -8,22 +8,23 @@
 
 1. [Overview & Architecture](#-overview--architecture)
 2. [Technology Stack](#-technology-stack)
-3. [Key Modules & Capabilities](#-key-modules--capabilities)
-4. [Project Structure](#-project-structure)
-5. [Prerequisites & Build](#-prerequisites--build)
-6. [Connection & Backend Pairing](#-connection--backend-pairing)
-7. [Unit Testing](#-unit-testing)
+3. [Key Modules & Features](#-key-modules--features)
+4. [Interactive Knowledge Graph & Optimizations](#-interactive-knowledge-graph--optimizations)
+5. [Project Structure](#-project-structure)
+6. [Prerequisites & Getting Started](#-prerequisites--getting-started)
+7. [Backend Integration](#-backend-integration)
 
 ---
 
 ## 🏛️ Overview & Architecture
 
-Meridian Client connects to the `MeridianHost.Api` OSINT search engine and provides an analyst-focused desktop workspace for conducting reconnaissance, examining live results, reviewing session logs, and browsing past searches.
+**Meridian Client** is the official companion desktop application for **Meridian Search Platform** (`MeridianHost.Api`). It provides intelligence analysts with a sleek, Cyber OSINT (Linear / Raycast inspired) workstation to run reconnaissance, inspect live findings, explore threat networks through an interactive knowledge graph, manage investigations, and monitor system telemetry.
 
-The client is built on strict **Model-View-ViewModel (MVVM)** principles powered by `CommunityToolkit.Mvvm`:
-- **Loose Coupling:** Clean boundary between presentation (XAML views) and business logic (ViewModels).
-- **Thread Safety:** Thread-safe collection synchronization using `BindingOperations.EnableCollectionSynchronization` for high-throughput gRPC stream message handling.
-- **Micro-Interactions & Transitions:** Fluid kinematic animations (`CubicEase`, `TranslateTransform`, `DoubleAnimation`, `Storyboard`) providing a Linear/Raycast dark theme feel.
+The application follows strict **Model-View-ViewModel (MVVM)** principles powered by `CommunityToolkit.Mvvm`:
+- **Decoupled Architecture:** Clean boundary between declarative XAML views and testable view models.
+- **Thread Safety:** Reactive thread-safe collection synchronization via `BindingOperations.EnableCollectionSynchronization` during high-frequency gRPC server streaming.
+- **Fluid Micro-Interactions:** Kinematic tab transitions, sliding panels, typewriter backspace input erasing, and glowing badges.
+- **Dual Theme Support:** Seamless Dark and Light theme switching with dynamic contrast adjustments for graph nodes, edges, and the minimap.
 
 ```
                     ┌────────────────────────┐
@@ -33,21 +34,21 @@ The client is built on strict **Model-View-ViewModel (MVVM)** principles powered
                                 │
                ┌────────────────┴────────────────┐
      REST API (POST / GET)              gRPC HTTP/2 Streaming
-  (Session lifecycle & History)       (FindingDiscovered events)
+  (Session lifecycle, history)         (FindingDiscovered events)
                │                                 │
                ▼                                 ▼
        [MeridianApiClient]             [MeridianStreamClient]
                │                                 │
                └────────────────┬────────────────┘
                                 │
-                                ▼
-                       [SearchViewModel]
-                                │ (Thread-safe collection sync)
-                                ▼
-                       [FindingItemViewModel]
-                                │
-                                ▼
-                         [SearchView]
+               ┌────────────────┴────────────────┐
+               ▼                                 ▼
+      [SearchViewModel]                  [GraphViewModel]
+               │                                 │
+     (Findings UI stream)               (Force-Directed Physics Engine)
+               │                                 │
+               ▼                                 ▼
+         [SearchView]                       [GraphView]
 ```
 
 ---
@@ -56,46 +57,83 @@ The client is built on strict **Model-View-ViewModel (MVVM)** principles powered
 
 | Component | Technology | Description |
 |---|---|---|
-| **Platform** | .NET 10 (`net10.0-windows`) | High-performance C# runtime with AOT and modern JIT optimizations |
-| **UI Framework** | WPF + `WPF-UI` (Lepoco) | Windows 11 Fluent dark mode styling, Mica/Acrylic backdrops |
-| **MVVM Library** | `CommunityToolkit.Mvvm` | Source-generated `[ObservableProperty]`, `[RelayCommand]` |
-| **Streaming & RPC** | `Grpc.Net.Client` & `Google.Protobuf` | HTTP/2 Protobuf server-streaming client |
-| **HTTP & REST** | `System.Net.Http.Json` | Asynchronous REST operations with custom socket handler |
-| **Testing** | `xUnit` | Automated test suite verifying ViewModels, parsers, and value converters |
+| **Platform** | .NET 10 (`net10.0-windows`) | High-performance C# runtime with tiered JIT compilation |
+| **UI Framework** | WPF + `WPF-UI` (Lepoco) | Windows 11 Fluent Dark / Light styling, Mica acrylic effects |
+| **MVVM** | `CommunityToolkit.Mvvm` | Source-generated `[ObservableProperty]`, `[RelayCommand]` |
+| **gRPC & Streaming** | `Grpc.Net.Client` & `Google.Protobuf` | HTTP/2 server streaming client |
+| **REST & Networking**| `System.Net.Http.Json` | Asynchronous HTTP client with custom sockets handler |
+| **Graph Physics** | Custom Force-Directed Engine | Coulomb repulsion, Hooke springs, gravitational centering |
+| **Investigation Storage**| JSON / Local Storage | Offline persistent investigations and graph states |
 
 ---
 
-## 🚀 Key Modules & Capabilities
+## 🚀 Key Modules & Features
 
-### 1. Live Target Reconnaissance (`SearchView`)
-- **Target Formulation:** Supports `Auto`, `Domain`, `IpAddress`, `Email`, and `Username`.
-- **HUD Telemetry Strip:** Displays live elapsed execution time (`mm:ss.fff`), session status (`Ready`, `Pending`, `Running`, `Completed`, `Failed`), and category counters.
-- **Categorized Finding Cards:**
-  - **DNS:** Visual pills for `A`, `AAAA`, `MX`, `TXT`, `NS` records with TTL and priority values.
-  - **WHOIS / RDAP:** Registrar identity, domain status, creation/expiration dates, and geographic information.
-  - **Subdomains:** Discovered subdomains, certificate authority issuer chip, and validity range.
-  - **Web Technologies:** HTTP response code badges (`200 OK`, `301`, etc.), page `<title>`, web server & framework badges, and security posture checks (`HSTS`, `CSP`, `X-Frame`).
-  - **Raw JSON Inspection:** Accordion expandable JSON viewer with one-click clipboard copy.
-- **Fast Interactive Clear:** Animated character-by-character backspace erasing for textboxes and brisk sequential card dismissal.
+### 1. Welcome Hub (`WelcomeWindow`)
+- Dedicated entry screen for managing multi-target investigation projects.
+- **Quick Actions:** Start fresh live searches, open saved investigations (`investigations.json`), or import external sessions.
+- Filterable list of ongoing and archived investigations with target badges and findings count.
+- Seamless single-click transition between the Hub and the active Workspace.
 
-### 2. Collapsible Filter Bar
-- Toggleable category filtering via neon `+` button with 45° rotation.
-- Instant client-side search across all fields (IPs, hosts, types, issuers, headers, servers).
+### 2. Live Target Reconnaissance (`SearchView`)
+- **Target Inputs:** Supports `Auto`, `Domain`, `IpAddress`, `Email`, and `Username`.
+- **Telemetry HUD Bar:** Live session timer (`mm:ss.fff`), status badge (`Ready`, `Pending`, `Running`, `Completed`, `Failed`), and category counters.
+- **Rich Intelligence Cards:**
+  - **DNS Records:** Color-coded badges (`A`, `AAAA`, `MX`, `TXT`, `NS`), resolved values, TTLs, and MX priorities.
+  - **WHOIS & RDAP:** Registrar, domain status, creation/expiration dates, and country codes.
+  - **Subdomains:** Certificate Transparency log findings (`crt.sh`) with issuer and certificate validity dates.
+  - **Web Technologies:** HTTP status codes (`200 OK`, `301`), page `<title>`, web servers, runtime chips, and security headers (`HSTS`, `CSP`, `X-Frame`).
+  - **Raw JSON Inspector:** Collapsible code view with one-click clipboard copying.
 
 ### 3. Session History (`HistoryView`)
-- Historical audit log of conducted OSINT searches with creation time and total finding counts.
-- Instant reload of full session findings directly into the search view.
-- Built-in session deletion endpoint integration.
+- Historical database of completed OSINT sessions stored in PostgreSQL.
+- Investigation-scoped filtering: inspect only sessions belonging to the active project or explore all global sessions.
+- Instant rehydration of session findings back onto the canvas or graph.
+- Granular deletion of obsolete sessions.
 
-### 4. Telemetry & Log Console (`LogsView`)
-- Real-time diagnostic viewer capturing REST queries, gRPC streaming events, and background health checks.
-- Filter by level (`All`, `Info`, `Warning`, `Error`, `Debug`) and quick text search.
-- One-click copy of all filtered logs to the clipboard.
+### 4. Telemetry & Logs Viewer (`LogsView`)
+- Real-time logging console capturing REST API, gRPC events, and Health Checks.
+- Granular log level filters (`All`, `Info`, `Warning`, `Error`, `Debug`) with search query matching.
+- One-click clipboard export for debugging and reporting.
 
-### 5. Settings & Health Checks (`SettingsView`)
-- Configurable base backend URL (supports HTTPS `https://localhost:7013` and HTTP `http://localhost:5168`).
+### 5. Settings & Network Diagnostics (`SettingsView`)
+- Base API and gRPC endpoint toggles (HTTPS `https://localhost:7013` and HTTP `http://localhost:5168`).
 - Unencrypted HTTP/2 support (`SocketsHttpHandler.Http2UnencryptedSupport`).
-- Ping / latency probe with visual status pill.
+- Real-time gateway ping monitoring with latency measurement.
+
+---
+
+## 🕸️ Interactive Knowledge Graph & Optimizations (`GraphView`)
+
+Engineered for large-scale OSINT visualization (150+ nodes and 190+ edges) at buttery-smooth **60–120 FPS**.
+
+### Force-Directed Physics Engine:
+- **Coulomb Repulsion:** Pairwise node repulsion $O(N^2)$ with distant pair pruning ($>650$ px) to prevent unnecessary calculations.
+- **Hooke's Spring Law:** Distance-based spring attraction pulling related nodes into readable clusters.
+- **Centering Gravity:** Gentle drift toward canvas center to maintain cohesive layouts.
+
+### 4 Pillars of Highload UI Optimization:
+1. **Physics Auto-Sleep & Damping:**
+   - Tracks kinetic energy and layout step counts (`MaxIterations = 140`).
+   - Automatically stops the physics loop (`_physicsTimer.Stop()`) when the graph stabilizes, reducing CPU utilization to **0.0%**.
+   - Wakes up (`WakeUp()`) only on user interaction (node drag, expand/pivot, or new finding arrival).
+   - Node dragging computes **localized physics** solely for immediate neighbors.
+2. **GPU Batching & WPF Freezing:**
+   - All brushes (`SolidColorBrush`), pens (`Pen`), and shapes are frozen via `.Freeze()`, eliminating Dispatcher change tracking.
+   - Reusable edge line pooling (`_edgeLinesPool`): eliminates allocations of `Line` objects per frame, updating only coordinates `X1, Y1, X2, Y2`.
+3. **Level of Detail (LOD) on Zoom:**
+   - Zooming out (`ZoomScale < 0.55`) hides node labels and secondary text, eliminating DirectWrite glyph layout overhead.
+   - Zooming in (`ZoomScale >= 0.55`) seamlessly restores full typography and badges.
+4. **Canvas Safety Bounds:**
+   - Built-in threshold of `MaxCanvasNodes = 200`.
+   - Prevents UI freezes during massive subdomain expansions with informative warning chips and notifications.
+
+### Graph Investigation Tools:
+- **Node Expansion (Pivot):** Double-click or context-menu expand any node (subdomain, IP, email) to trigger secondary discovery streams.
+- **Branch Collapsing:** Collapse dense clusters into numeric badges indicating hidden node counts.
+- **Threat Path Tracing:** Animated pulsating neon path highlighting chains from compromised nodes to roots.
+- **Interactive Minimap:** Real-time mini radar showing the entire graph boundary and current viewport frame with click/pan navigation.
+- **High-DPI Export:** One-click vector/high-resolution PNG graph snapshot export for analytical reports.
 
 ---
 
@@ -103,72 +141,53 @@ The client is built on strict **Model-View-ViewModel (MVVM)** principles powered
 
 ```
 MeridianClient/
-├── App.xaml / App.xaml.cs                   # Application entry, DI setup, theme initialization
-├── MainWindow.xaml / MainWindow.xaml.cs     # Main shell, sidebar navigation, titlebar
+├── App.xaml / App.xaml.cs                   # Entry point, DI container, theme initialization
+├── MainWindow.xaml / MainWindow.xaml.cs     # Main application window, sidebar, screen router
+├── WelcomeWindow.xaml / .xaml.cs            # Fullscreen Welcome & Investigation Hub
 ├── MeridianClient.csproj                    # Project configuration & Protobuf compilation
-├── MeridianClient.slnx                      # Solution definition
 ├── Converters/
-│   └── ValueConverters.cs                  # Value converters (Visibility, Brush, String matching)
+│   └── ValueConverters.cs                  # UI value converters (Visibility, Brushes, etc.)
 ├── Models/
-│   ├── AppSettings.cs                       # Client settings model
-│   ├── CreateSearchSessionRequest.cs        # REST session creation request
-│   ├── CreateSearchSessionResponse.cs       # REST session creation response
-│   ├── FindingModel.cs                      # Generic finding payload model
-│   ├── LogEntry.cs                          # Telemetry log entry model
-│   ├── ParsedDnsData.cs                     # DNS record representation
-│   ├── ParsedHttpTechData.cs                # Web technology & security headers model
-│   ├── ParsedSubdomainData.cs               # Subdomain & certificate model
-│   ├── ParsedWhoisData.cs                   # WHOIS / RDAP model
-│   ├── SearchSessionModel.cs                # Session metadata and findings container
-│   └── SearchTarget.cs                      # Reconnaissance target descriptor
-├── Protos/
-│   └── search_stream.proto                  # Protobuf contract for SearchStreamService
+│   ├── AppSettings.cs                       # Client settings
+│   ├── GraphModels.cs                       # GraphNode, GraphEdge, and NodeType definitions
+│   ├── InvestigationModel.cs                # Investigation container model
+│   ├── FindingModel.cs                      # Generic intelligence finding model
+│   └── SearchSessionModel.cs                # Reconnaissance session model
 ├── Services/
-│   ├── HealthCheckService.cs                # Periodic and on-demand API health ping
-│   ├── LogService.cs                        # In-memory logging and event bus
-│   ├── MeridianApiClient.cs                 # REST API client
-│   ├── MeridianStreamClient.cs              # gRPC client stream wrapper
-│   └── SettingsService.cs                   # Persistent configuration storage
+│   ├── GraphDataMapper.cs                   # Maps OSINT findings to graph topology
+│   ├── GraphSimulationEngine.cs             # Physics engine with auto-sleep & local stepping
+│   ├── InvestigationService.cs              # JSON-based investigation storage
+│   ├── MeridianApiClient.cs                 # REST API communication
+│   ├── MeridianStreamClient.cs              # gRPC streaming client
+│   └── ThemeService.cs                      # Dynamic Dark/Light theme manager
 ├── ViewModels/
-│   ├── FindingItemViewModel.cs              # Finding card ViewModel and payload parser
-│   ├── HistoryViewModel.cs                  # Session history ViewModel
-│   ├── LogsViewModel.cs                     # Diagnostic logs console ViewModel
-│   ├── MainViewModel.cs                     # Shell & navigation orchestrator
-│   ├── SearchViewModel.cs                   # Search coordinator & stream handler
-│   └── SettingsViewModel.cs                 # Gateway settings ViewModel
-├── Views/
-│   ├── HistoryView.xaml                     # Session history UI
-│   ├── LogsView.xaml                        # Log viewer UI
-│   ├── SearchView.xaml                      # Main reconnaissance feed UI
-│   └── SettingsView.xaml                    # Settings UI
-└── Tests/
-    └── MeridianClient.Tests/                # Automated xUnit test suite (34 unit tests)
+│   ├── GraphViewModel.cs                    # Graph state, layout, zooming, and pivot logic
+│   ├── HistoryViewModel.cs                  # Session history & investigation filtering
+│   ├── SearchViewModel.cs                   # Reconnaissance search & findings pipeline
+│   ├── WelcomeViewModel.cs                  # Welcome Hub actions & recent investigations
+│   └── MainViewModel.cs                     # Root navigation coordinator
+└── Views/
+    ├── GraphView.xaml / .xaml.cs            # Force-directed canvas and minimap
+    ├── HistoryView.xaml / .xaml.cs          # Historical session browser
+    ├── LogsView.xaml / .xaml.cs             # Real-time event log console
+    ├── SearchView.xaml / .xaml.cs           # Target search input and finding cards
+    └── SettingsView.xaml / .xaml.cs         # Settings & network monitor
 ```
 
 ---
 
-## ⚙️ Prerequisites & Build
+## ⚙️ Prerequisites & Getting Started
 
-- **Operating System:** Windows 10 (Build 19041+) or Windows 11
+- **OS:** Windows 10 (Build 19041+) or Windows 11
 - **SDK:** .NET 10.0 SDK
 - **IDE:** JetBrains Rider or Visual Studio 2022+
 
 ### Build & Run:
 
 ```bash
-# Restore dependencies and build
-dotnet build MeridianClient.slnx
+# Build project
+dotnet build MeridianClient.csproj
 
-# Run desktop client
+# Run application
 dotnet run --project MeridianClient.csproj
-```
-
----
-
-## 🧪 Unit Testing
-
-Execute all unit tests using the .NET CLI:
-
-```bash
-dotnet test Tests/MeridianClient.Tests/MeridianClient.Tests.csproj
 ```
