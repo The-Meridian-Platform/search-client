@@ -19,6 +19,8 @@
             <SolidColorBrush x:Key="AccentBrush" Color="#06B6D4" />
             <SolidColorBrush x:Key="SubtleAccentBrush" Color="#1C06B6D4" />
             <SolidColorBrush x:Key="BorderAccentBrush" Color="#5A06B6D4" />
+            <SolidColorBrush x:Key="GraphEdgeBrush" Color="#32FFFFFF" />
+            <SolidColorBrush x:Key="MinimapBackgroundBrush" Color="#D0151820" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

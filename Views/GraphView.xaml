@@ -404,7 +404,7 @@
                     Width="180" Height="130"
                     HorizontalAlignment="Right" VerticalAlignment="Bottom"
                     Margin="0,0,18,18"
-                    Background="#D0151820"
+                    Background="{DynamicResource MinimapBackgroundBrush}"
                     BorderBrush="{DynamicResource CardBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8"

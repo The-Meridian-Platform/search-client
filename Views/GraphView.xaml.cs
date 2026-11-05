@@ -45,8 +45,18 @@ public partial class GraphView : UserControl
         graphCanvas.Children.Add(_edgeCanvas);
         graphCanvas.Children.Add(_nodesContainer);
 
+        ThemeService.Instance.ThemeChanged += OnThemeChanged;
+
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    private void OnThemeChanged()
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            RebuildAllVisuals(animate: false);
+        });
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -585,6 +595,8 @@ public partial class GraphView : UserControl
         _edgeCanvas.Children.Clear();
 
         var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
+        var brushNormal = Application.Current.FindResource("GraphEdgeBrush") as SolidColorBrush
+                          ?? (Application.Current.FindResource("SecondaryTextBrush") as SolidColorBrush ?? Brushes.Gray);
         var brushThreat = new SolidColorBrush(Color.FromRgb(255, 51, 102));
         var edgePenActive = new Pen(brushAccent, 2.0);
         var edgePenThreat = new Pen(brushThreat, 2.5);
@@ -602,9 +614,9 @@ public partial class GraphView : UserControl
             double ageMs = (now - spawnTime).TotalMilliseconds;
             double fadeProgress = Math.Clamp(ageMs / 350.0, 0.05, 1.0);
 
-            Brush strokeBrush = _edgePenNormal.Brush;
+            Brush strokeBrush = brushNormal;
             double thickness = 1.2;
-            double opacity = 0.45;
+            double opacity = 0.55;
 
             if (edge.IsThreatPath)
             {
@@ -970,12 +982,15 @@ public partial class GraphView : UserControl
                 ctx.PushTransform(new TranslateTransform(-minX, -minY));
 
                 var brushAccent = Application.Current.FindResource("AccentBrush") as SolidColorBrush ?? Brushes.Cyan;
+                var brushNormal = Application.Current.FindResource("GraphEdgeBrush") as SolidColorBrush
+                                  ?? (Application.Current.FindResource("SecondaryTextBrush") as SolidColorBrush ?? Brushes.Gray);
                 var edgePenActive = new Pen(brushAccent, 2.0);
+                var edgePenNormal = new Pen(brushNormal, 1.2);
 
                 foreach (var edge in vm.Edges)
                 {
                     if (!edge.IsVisible || !edge.Source.IsVisible || !edge.Target.IsVisible) continue;
-                    var pen = edge.IsHighlighted ? edgePenActive : _edgePenNormal;
+                    var pen = edge.IsHighlighted ? edgePenActive : edgePenNormal;
                     ctx.DrawLine(pen, new Point(edge.Source.X, edge.Source.Y), new Point(edge.Target.X, edge.Target.Y));
                 }
 

@@ -184,6 +184,16 @@ public class ThemeService : IThemeService
                 SetOrUpdate("AccentBrush", palette.Accent);
                 SetOrUpdate("SubtleAccentBrush", subtleAccent);
                 SetOrUpdate("BorderAccentBrush", borderAccent);
+
+                var edgeColor = palette.IsDark
+                    ? Color.FromArgb(50, 255, 255, 255)
+                    : Color.FromArgb(70, 71, 85, 105);
+                SetOrUpdate("GraphEdgeBrush", edgeColor);
+
+                var minimapBg = palette.IsDark
+                    ? Color.FromArgb(208, 21, 24, 32)
+                    : Color.FromArgb(235, 255, 255, 255);
+                SetOrUpdate("MinimapBackgroundBrush", minimapBg);
             }
 
             UpdateDict(Application.Current.Resources);
