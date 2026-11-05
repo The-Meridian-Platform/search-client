@@ -537,6 +537,34 @@ public partial class SearchViewModel : ObservableObject
         }
     }
 
+    public void ResetState()
+    {
+        StopSearch();
+        _searchSessionGeneration++;
+        CurrentSessionId = string.Empty;
+        TargetInput = string.Empty;
+        ActiveTarget = string.Empty;
+        SessionStatus = "Ready";
+        StatusMessage = "Готов к запуску поиска";
+        ElapsedTime = "00:00.000";
+
+        lock (_findingsLock)
+        {
+            Findings.Clear();
+        }
+
+        TotalFindingsCount = 0;
+        DnsFindingsCount = 0;
+        WhoisFindingsCount = 0;
+        SubdomainFindingsCount = 0;
+        HttpTechFindingsCount = 0;
+        EmailFindingsCount = 0;
+        UsernameFindingsCount = 0;
+        IpFindingsCount = 0;
+
+        SafeRefreshFindingsView();
+    }
+
     public void LoadExistingSession(SearchSessionModel session)
     {
         StopSearch();

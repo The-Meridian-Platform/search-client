@@ -43,6 +43,10 @@ public partial class MainViewModel : ObservableObject
         _currentViewModel = Search;
         _currentTab = "Search";
 
+        Welcome.CreateNewInvestigationRequested += () =>
+        {
+            Graph.StartNewInvestigation();
+        };
         Welcome.NavigateToSearchRequested += () => NavigateTo("Search");
         Welcome.NavigateToGraphRequested += () => NavigateTo("Graph");
         Welcome.OpenInvestigationRequested += inv =>

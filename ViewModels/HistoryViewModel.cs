@@ -25,6 +25,16 @@ public partial class HistoryViewModel : ObservableObject
     [ObservableProperty]
     private SearchSessionModel? _selectedSession;
 
+    [ObservableProperty]
+    private bool _filterByCurrentInvestigation = true;
+
+    [ObservableProperty]
+    private string _currentInvestigationTitle = string.Empty;
+
+    public List<string> CurrentInvestigationSessionIds { get; } = new();
+
+    private readonly List<SearchSessionModel> _allRawSessions = new();
+
     public ObservableCollection<SearchSessionModel> Sessions { get; } = new();
 
     public bool HasSessions => Sessions.Count > 0;
@@ -38,6 +48,53 @@ public partial class HistoryViewModel : ObservableObject
         _toastService = toastService ?? new ToastService(new SettingsService());
     }
 
+    public void SetCurrentInvestigation(InvestigationModel? inv)
+    {
+        CurrentInvestigationSessionIds.Clear();
+        if (inv != null)
+        {
+            CurrentInvestigationTitle = inv.Title;
+            CurrentInvestigationSessionIds.AddRange(inv.SessionIds);
+        }
+        else
+        {
+            CurrentInvestigationTitle = string.Empty;
+        }
+
+        ApplyFilter();
+    }
+
+    partial void OnFilterByCurrentInvestigationChanged(bool value)
+    {
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var selectedId = SelectedSession?.EffectiveId;
+        Sessions.Clear();
+
+        var source = _allRawSessions.AsEnumerable();
+
+        if (FilterByCurrentInvestigation && CurrentInvestigationSessionIds.Count > 0)
+        {
+            source = source.Where(s => CurrentInvestigationSessionIds.Contains(s.EffectiveId));
+        }
+
+        foreach (var s in source)
+        {
+            Sessions.Add(s);
+        }
+
+        if (!string.IsNullOrEmpty(selectedId))
+        {
+            SelectedSession = Sessions.FirstOrDefault(s => s.EffectiveId == selectedId);
+        }
+
+        OnPropertyChanged(nameof(HasSessions));
+        OnPropertyChanged(nameof(IsEmpty));
+    }
+
     [RelayCommand]
     public async Task LoadHistoryAsync()
     {
@@ -46,19 +103,14 @@ public partial class HistoryViewModel : ObservableObject
 
         try
         {
-            var selectedId = SelectedSession?.EffectiveId;
             var sessions = await _apiClient.GetSessionsHistoryAsync();
-            Sessions.Clear();
+            _allRawSessions.Clear();
             foreach (var session in sessions.OrderByDescending(s => s.CreatedAt ?? s.StartedAt))
             {
-                Sessions.Add(session);
+                _allRawSessions.Add(session);
             }
-            if (!string.IsNullOrEmpty(selectedId))
-            {
-                SelectedSession = Sessions.FirstOrDefault(s => s.EffectiveId == selectedId);
-            }
-            OnPropertyChanged(nameof(HasSessions));
-            OnPropertyChanged(nameof(IsEmpty));
+
+            ApplyFilter();
         }
         catch (Exception ex)
         {

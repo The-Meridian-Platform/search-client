@@ -79,12 +79,14 @@ public partial class App : Application
                 }
 
                 welcomeVm.OpenInvestigationRequested += OnOpenInvestigation;
+                welcomeVm.CreateNewInvestigationRequested += OnNavigate;
                 welcomeVm.NavigateToSearchRequested += OnNavigate;
                 welcomeVm.NavigateToGraphRequested += OnNavigate;
 
                 welcomeWindow.Closed += (s, args) =>
                 {
                     welcomeVm.OpenInvestigationRequested -= OnOpenInvestigation;
+                    welcomeVm.CreateNewInvestigationRequested -= OnNavigate;
                     welcomeVm.NavigateToSearchRequested -= OnNavigate;
                     welcomeVm.NavigateToGraphRequested -= OnNavigate;
 

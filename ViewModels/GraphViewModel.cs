@@ -512,6 +512,20 @@ public partial class GraphViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void StartNewInvestigation()
+    {
+        CurrentInvestigation = null;
+        IsLiveMode = true;
+        IsInvestigationMode = false;
+        CurrentSessionTitle = "Новое расследование";
+        TargetDisplay = "—";
+        ClearGraph();
+        CurrentInvestigationTargets.Clear();
+        _searchViewModel.ResetState();
+        _historyViewModel.SetCurrentInvestigation(null);
+    }
+
+    [RelayCommand]
     public void ExitToHub()
     {
         ExitToHubRequested?.Invoke();
@@ -1492,6 +1506,7 @@ public partial class GraphViewModel : ObservableObject
         if (updated || !_investigationService.GetAll().Any(i => i.Id == CurrentInvestigation.Id))
         {
             _investigationService.Save(CurrentInvestigation);
+            _historyViewModel.SetCurrentInvestigation(CurrentInvestigation);
             _settingsService.Settings.LastActiveInvestigationId = CurrentInvestigation.Id;
             _settingsService.SaveSettings(_settingsService.Settings);
             ReloadAvailableInvestigations();
@@ -1508,6 +1523,7 @@ public partial class GraphViewModel : ObservableObject
         CurrentInvestigation = inv;
         CurrentSessionTitle = inv.Title;
         TargetDisplay = inv.RootTarget;
+        _historyViewModel.SetCurrentInvestigation(inv);
 
         ClearGraph();
         CurrentInvestigationTargets.Clear();

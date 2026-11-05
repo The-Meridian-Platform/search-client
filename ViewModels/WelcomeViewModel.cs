@@ -19,6 +19,7 @@ public partial class WelcomeViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly IToastService _toastService;
 
+    public event Action? CreateNewInvestigationRequested;
     public event Action? NavigateToSearchRequested;
     public event Action<InvestigationModel>? OpenInvestigationRequested;
     public event Action? NavigateToGraphRequested;
@@ -73,6 +74,7 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     public void NewInvestigation()
     {
+        CreateNewInvestigationRequested?.Invoke();
         NavigateToSearchRequested?.Invoke();
     }
 
