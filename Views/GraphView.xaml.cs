@@ -575,6 +575,9 @@ public partial class GraphView : UserControl
 
         // 2. Redraw edges
         DrawEdges(vm.Edges);
+
+        // 3. Update Minimap
+        UpdateMinimap(vm);
     }
 
     private void DrawEdges(IReadOnlyList<GraphEdge> edges)
@@ -728,6 +731,146 @@ public partial class GraphView : UserControl
         var matrix = Matrix.Identity;
         matrix.Scale(scale, scale);
         matrix.Translate(viewWidth / 2.0 - centerX * scale, viewHeight / 2.0 - centerY * scale);
+
+        canvasTransform.Matrix = matrix;
+    }
+
+    #endregion
+
+    #region Minimap Overview
+
+    private Rect _minimapWorldBounds = new(2000, 2000, 1000, 1000);
+
+    private void UpdateMinimap(GraphViewModel vm)
+    {
+        if (minimapCanvas == null || minimapBorder.Visibility != Visibility.Visible) return;
+
+        var visibleNodes = vm.Nodes.Where(n => n.IsVisible).ToList();
+        if (visibleNodes.Count == 0)
+        {
+            minimapCanvas.Children.Clear();
+            return;
+        }
+
+        double minX = visibleNodes.Min(n => n.X);
+        double maxX = visibleNodes.Max(n => n.X);
+        double minY = visibleNodes.Min(n => n.Y);
+        double maxY = visibleNodes.Max(n => n.Y);
+
+        double pad = 200.0;
+        minX -= pad;
+        minY -= pad;
+        maxX += pad;
+        maxY += pad;
+
+        double worldW = Math.Max(maxX - minX, 400.0);
+        double worldH = Math.Max(maxY - minY, 300.0);
+        _minimapWorldBounds = new Rect(minX, minY, worldW, worldH);
+
+        double mapW = minimapCanvas.ActualWidth > 0 ? minimapCanvas.ActualWidth : 180.0;
+        double mapH = minimapCanvas.ActualHeight > 0 ? minimapCanvas.ActualHeight : 130.0;
+
+        double scaleX = mapW / worldW;
+        double scaleY = mapH / worldH;
+        double scale = Math.Min(scaleX, scaleY);
+
+        double offX = (mapW - worldW * scale) / 2.0;
+        double offY = (mapH - worldH * scale) / 2.0;
+
+        minimapCanvas.Children.Clear();
+
+        foreach (var node in visibleNodes)
+        {
+            double nx = offX + (node.X - minX) * scale;
+            double ny = offY + (node.Y - minY) * scale;
+
+            double dotSize = node.Type == GraphNodeType.Target ? 6.0 : 4.0;
+            var dot = new Ellipse
+            {
+                Width = dotSize,
+                Height = dotSize,
+                Fill = new SolidColorBrush(node.IsThreat ? Color.FromRgb(255, 51, 102) : node.AccentColor)
+            };
+            Canvas.SetLeft(dot, nx - dotSize / 2.0);
+            Canvas.SetTop(dot, ny - dotSize / 2.0);
+            minimapCanvas.Children.Add(dot);
+        }
+
+        var matrix = canvasTransform.Matrix;
+        if (matrix.HasInverse)
+        {
+            var inv = matrix;
+            inv.Invert();
+
+            double vpW = canvasViewport.ActualWidth > 0 ? canvasViewport.ActualWidth : 800.0;
+            double vpH = canvasViewport.ActualHeight > 0 ? canvasViewport.ActualHeight : 600.0;
+
+            var topLeft = inv.Transform(new Point(0, 0));
+            var bottomRight = inv.Transform(new Point(vpW, vpH));
+
+            double rx = offX + (topLeft.X - minX) * scale;
+            double ry = offY + (topLeft.Y - minY) * scale;
+            double rw = (bottomRight.X - topLeft.X) * scale;
+            double rh = (bottomRight.Y - topLeft.Y) * scale;
+
+            var viewportRect = new Rectangle
+            {
+                Width = Math.Max(rw, 8.0),
+                Height = Math.Max(rh, 8.0),
+                Stroke = new SolidColorBrush(Color.FromArgb(200, 6, 182, 212)),
+                StrokeThickness = 1.2,
+                Fill = new SolidColorBrush(Color.FromArgb(30, 6, 182, 212)),
+                IsHitTestVisible = false
+            };
+            Canvas.SetLeft(viewportRect, rx);
+            Canvas.SetTop(viewportRect, ry);
+            minimapCanvas.Children.Add(viewportRect);
+        }
+    }
+
+    private void Minimap_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            NavigateToMinimapPoint(e.GetPosition(minimapCanvas));
+            e.Handled = true;
+        }
+    }
+
+    private void Minimap_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            NavigateToMinimapPoint(e.GetPosition(minimapCanvas));
+            e.Handled = true;
+        }
+    }
+
+    private void NavigateToMinimapPoint(Point pt)
+    {
+        double mapW = minimapCanvas.ActualWidth > 0 ? minimapCanvas.ActualWidth : 180.0;
+        double mapH = minimapCanvas.ActualHeight > 0 ? minimapCanvas.ActualHeight : 130.0;
+
+        double worldW = _minimapWorldBounds.Width;
+        double worldH = _minimapWorldBounds.Height;
+        double minX = _minimapWorldBounds.Left;
+        double minY = _minimapWorldBounds.Top;
+
+        double scale = Math.Min(mapW / worldW, mapH / worldH);
+        double offX = (mapW - worldW * scale) / 2.0;
+        double offY = (mapH - worldH * scale) / 2.0;
+
+        double targetWorldX = minX + (pt.X - offX) / scale;
+        double targetWorldY = minY + (pt.Y - offY) / scale;
+
+        double vpW = canvasViewport.ActualWidth > 0 ? canvasViewport.ActualWidth : 800.0;
+        double vpH = canvasViewport.ActualHeight > 0 ? canvasViewport.ActualHeight : 600.0;
+
+        var matrix = canvasTransform.Matrix;
+        double currentScale = matrix.M11;
+
+        matrix.OffsetX = vpW / 2.0 - targetWorldX * currentScale;
+        matrix.OffsetY = vpH / 2.0 - targetWorldY * currentScale;
 
         canvasTransform.Matrix = matrix;
     }

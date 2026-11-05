@@ -483,6 +483,41 @@
                 </Canvas>
             </Border>
 
+            <!-- Minimap Overview Floating Panel -->
+            <Border Grid.Column="0"
+                    x:Name="minimapBorder"
+                    Width="180" Height="130"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Margin="0,0,18,18"
+                    Background="#D0151820"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    ClipToBounds="True"
+                    Cursor="Hand"
+                    MouseDown="Minimap_MouseDown"
+                    MouseMove="Minimap_MouseMove"
+                    Visibility="{Binding NodesCount, Converter={StaticResource BoolToVis}}">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="2" Opacity="0.6" />
+                </Border.Effect>
+                <Grid>
+                    <!-- Minimap Canvas for dots and viewport rectangle -->
+                    <Canvas x:Name="minimapCanvas" Width="180" Height="130" Background="Transparent" />
+
+                    <!-- Minimap Header Label -->
+                    <TextBlock Text="MAP"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Opacity="0.5"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Top"
+                               Margin="8,6,0,0"
+                               IsHitTestVisible="False" />
+                </Grid>
+            </Border>
+
             <!-- Empty State Overlay (When graph has no nodes yet) -->
             <Border Grid.Column="0"
                     Background="{DynamicResource AppBackgroundBrush}"
