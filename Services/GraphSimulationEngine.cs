@@ -6,13 +6,13 @@ namespace MeridianClient.Services;
 
 public class GraphSimulationEngine
 {
-    public double RepulsionConstant { get; set; } = 4800.0;
+    public double RepulsionConstant { get; set; } = 5500.0;
     public double SpringConstant { get; set; } = 0.045;
-    public double DesiredEdgeDistance { get; set; } = 85.0;
-    public double GravityConstant { get; set; } = 0.018;
-    public double Damping { get; set; } = 0.84;
+    public double DesiredEdgeDistance { get; set; } = 120.0;
+    public double GravityConstant { get; set; } = 0.015;
+    public double Damping { get; set; } = 0.85;
     public double MaxVelocity { get; set; } = 14.0;
-    public double EnergyThreshold { get; set; } = 0.08;
+    public double EnergyThreshold { get; set; } = 0.05;
 
     public bool IsSleeping { get; private set; }
 

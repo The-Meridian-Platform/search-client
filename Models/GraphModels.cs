@@ -18,6 +18,9 @@ public enum GraphNodeType
     Profile,
     EmailVerified,
     Warning,
+    Asn,
+    Port,
+    Location,
     Other
 }
 
@@ -25,10 +28,31 @@ public partial class GraphNode : ObservableObject
 {
     public string Id { get; }
     public string Label { get; }
-    public string SubLabel { get; }
     public GraphNodeType Type { get; }
     public string? RawJson { get; }
-    public IReadOnlyDictionary<string, string> Properties { get; }
+
+    [ObservableProperty]
+    private string _subLabel = string.Empty;
+
+    private readonly Dictionary<string, string> _properties;
+    public IReadOnlyDictionary<string, string> Properties => _properties;
+
+    public void SetProperty(string key, string value)
+    {
+        _properties[key] = value;
+    }
+
+    public void MergeProperties(IReadOnlyDictionary<string, string>? newProps)
+    {
+        if (newProps == null) return;
+        foreach (var (k, v) in newProps)
+        {
+            if (!string.IsNullOrWhiteSpace(v))
+            {
+                _properties[k] = v;
+            }
+        }
+    }
 
     [ObservableProperty]
     private double _x;
@@ -66,6 +90,9 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Profile => 21,
         GraphNodeType.EmailVerified => 19,
         GraphNodeType.Warning => 19,
+        GraphNodeType.Asn => 17,
+        GraphNodeType.Location => 17,
+        GraphNodeType.Port => 15,
         GraphNodeType.IpAddress => 18,
         GraphNodeType.NameServer => 17,
         GraphNodeType.MailServer => 18,
@@ -88,6 +115,9 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Profile => "PersonCircle24",
         GraphNodeType.EmailVerified => "ShieldCheckmark24",
         GraphNodeType.Warning => "ShieldError24",
+        GraphNodeType.Asn => "NetworkCheck24",
+        GraphNodeType.Location => "Location24",
+        GraphNodeType.Port => "PlugDisconnected24",
         _ => "DocumentBulletList24"
     };
 
@@ -104,6 +134,9 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Profile => "OSINT Профиль",
         GraphNodeType.EmailVerified => "Легитимная почта",
         GraphNodeType.Warning => "Одноразовая почта",
+        GraphNodeType.Asn => "AS Сеть",
+        GraphNodeType.Location => "Геолокация",
+        GraphNodeType.Port => "Открытый порт",
         _ => "Находка"
     };
 
@@ -121,6 +154,9 @@ public partial class GraphNode : ObservableObject
             GraphNodeType.Profile => "OSINT Profile",
             GraphNodeType.EmailVerified => "Legitimate Email",
             GraphNodeType.Warning => "Burner / Disposable Mail",
+            GraphNodeType.Asn => "AS Network",
+            GraphNodeType.Location => "Location",
+            GraphNodeType.Port => "Open Port",
             _ => "Finding"
         }
         : TypeNameRu;
@@ -136,9 +172,12 @@ public partial class GraphNode : ObservableObject
         GraphNodeType.Registrar => Color.FromRgb(236, 72, 153),   // Pink #EC4899
         GraphNodeType.Contact => Color.FromRgb(234, 179, 8),      // Yellow #EAB308
         GraphNodeType.Profile => Color.FromRgb(137, 87, 229),     // Purple / GitHub #8957E5
-        GraphNodeType.EmailVerified => Color.FromRgb(0, 229, 153),// Neon Green #00E599
-        GraphNodeType.Warning => Color.FromRgb(255, 51, 102),     // Crimson #FF3366
-        _ => Color.FromRgb(148, 163, 184)                         // Slate #94A3B8
+        GraphNodeType.EmailVerified => Color.FromRgb(0, 229, 153),
+        GraphNodeType.Warning => Color.FromRgb(255, 51, 102),
+        GraphNodeType.Asn => Color.FromRgb(99, 102, 241),
+        GraphNodeType.Location => Color.FromRgb(56, 189, 248),
+        GraphNodeType.Port => Color.FromRgb(255, 184, 0),
+        _ => Color.FromRgb(148, 163, 184)
     };
 
     public GraphNode(
@@ -151,10 +190,10 @@ public partial class GraphNode : ObservableObject
     {
         Id = id;
         Label = label;
-        SubLabel = subLabel;
+        _subLabel = subLabel;
         Type = type;
         RawJson = rawJson;
-        Properties = properties ?? new Dictionary<string, string>();
+        _properties = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
     }
 }
 

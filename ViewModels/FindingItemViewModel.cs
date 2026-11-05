@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -55,6 +55,24 @@ public partial class FindingItemViewModel : ObservableObject
     private bool _isMxEmail;
 
     [ObservableProperty]
+    private bool _isIpGeo;
+
+    [ObservableProperty]
+    private bool _isIpReverseDns;
+
+    [ObservableProperty]
+    private bool _isIpShodan;
+
+    [ObservableProperty]
+    private bool _isUsernameGithub;
+
+    [ObservableProperty]
+    private bool _isUsernameTelegram;
+
+    [ObservableProperty]
+    private bool _isUsernamePresence;
+
+    [ObservableProperty]
     private ParsedDnsData? _dnsData;
 
     [ObservableProperty]
@@ -79,15 +97,39 @@ public partial class FindingItemViewModel : ObservableObject
     private ParsedMxEmailData? _mxEmailData;
 
     [ObservableProperty]
+    private ParsedIpGeoData? _ipGeoData;
+
+    [ObservableProperty]
+    private ParsedIpReverseDnsData? _ipReverseDnsData;
+
+    [ObservableProperty]
+    private ParsedIpShodanData? _ipShodanData;
+
+    [ObservableProperty]
+    private ParsedUsernameGithubData? _usernameGithubData;
+
+    [ObservableProperty]
+    private ParsedUsernameTelegramData? _usernameTelegramData;
+
+    [ObservableProperty]
+    private ParsedUsernamePresenceData? _usernamePresenceData;
+
+    [ObservableProperty]
     private bool _isDismissing;
 
+    public static event Action<string>? PivotSearchRequested;
+
     public bool IsEmailFinding => IsGitHubEmail || IsGravatarEmail || IsDisposableEmail || IsMxEmail;
+    public bool IsIpFinding => IsIpGeo || IsIpReverseDns || IsIpShodan;
+    public bool IsUsernameFinding => IsUsernameGithub || IsUsernameTelegram || IsUsernamePresence;
 
     public string Category
     {
         get
         {
             if (IsEmailFinding) return "Email";
+            if (IsUsernameFinding) return "Username";
+            if (IsIpFinding) return "IP";
             if (IsDns) return "DNS";
             if (IsWhois) return "Whois";
             if (IsSubdomain) return "Subdomain";
@@ -104,6 +146,12 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsGravatarEmail) return "GRAVATAR";
             if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeText ?? "DISPOSABLE";
             if (IsMxEmail) return "MAIL SERVER";
+            if (IsIpGeo) return "IP GEO";
+            if (IsIpReverseDns) return "REVERSE DNS";
+            if (IsIpShodan) return IpShodanData?.HasVulns == true ? "SHODAN (VULN)" : "SHODAN";
+            if (IsUsernameGithub) return "GITHUB";
+            if (IsUsernameTelegram) return "TELEGRAM";
+            if (IsUsernamePresence) return !string.IsNullOrWhiteSpace(UsernamePresenceData?.Platform) ? UsernamePresenceData.Platform.ToUpperInvariant() : "PRESENCE";
             if (IsDns && !string.IsNullOrWhiteSpace(DnsData?.RecordType) &&
                 !DnsData.RecordType.Equals("dns_record", StringComparison.OrdinalIgnoreCase))
             {
@@ -135,6 +183,12 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsGravatarEmail) return "#00D2FF";
             if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeColor ?? "#FF3366";
             if (IsMxEmail) return "#FF7A00";
+            if (IsIpGeo) return "#00D2FF";
+            if (IsIpReverseDns) return "#818CF8";
+            if (IsIpShodan) return IpShodanData?.HasVulns == true ? "#F43F5E" : "#FFB800";
+            if (IsUsernameGithub) return "#8957E5";
+            if (IsUsernameTelegram) return "#2AABEE";
+            if (IsUsernamePresence) return UsernamePresenceData?.PlatformBadgeForeground ?? "#00D2FF";
             if (IsDns && DnsData != null) return DnsData.RecordTypeColor;
             if (IsWhois) return "#C084FC";
             if (IsSubdomain) return "#00F0FF";
@@ -151,6 +205,12 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsGravatarEmail) return "#2000D2FF";
             if (IsDisposableEmail) return DisposableEmailData?.StatusBadgeBackground ?? "#25FF3366";
             if (IsMxEmail) return "#25FF7A00";
+            if (IsIpGeo) return "#2000D2FF";
+            if (IsIpReverseDns) return "#20818CF8";
+            if (IsIpShodan) return IpShodanData?.HasVulns == true ? "#25F43F5E" : "#25FFB800";
+            if (IsUsernameGithub) return "#258957E5";
+            if (IsUsernameTelegram) return "#252AABEE";
+            if (IsUsernamePresence) return UsernamePresenceData?.PlatformBadgeBackground ?? "#2000D2FF";
             if (IsDns && DnsData != null) return DnsData.RecordTypeBackground;
             if (IsWhois) return "#25A855F7";
             if (IsSubdomain) return "#2000F0FF";
@@ -178,6 +238,21 @@ public partial class FindingItemViewModel : ObservableObject
         bool isMxEmail = typeUpper.Contains("MX-EMAIL") || typeUpper.Contains("MX_EMAIL") ||
                          (typeUpper.Contains("EMAIL") && typeUpper.Contains("MX")) ||
                          providerUpper.Contains("EMAIL-MX") || providerUpper.Contains("MX-EMAIL");
+
+        bool isIpGeo = typeUpper.Contains("IP-GEO") || typeUpper.Contains("IP_GEO") || providerUpper.Contains("IP-GEO") ||
+                       typeUpper.Equals("GEO_RECORD", StringComparison.OrdinalIgnoreCase);
+        bool isIpRdns = typeUpper.Contains("IP-RDNS") || typeUpper.Contains("IP_RDNS") || typeUpper.Contains("RDNS_RECORD") ||
+                        providerUpper.Contains("IP-RDNS") || providerUpper.Contains("RDNS");
+        bool isIpShodan = typeUpper.Contains("IP-SHODAN") || typeUpper.Contains("IP_SHODAN") || typeUpper.Contains("SHODAN_RECORD") ||
+                          providerUpper.Contains("IP-SHODAN") || providerUpper.Contains("SHODAN");
+
+        bool isUsernameGithub = typeUpper.Contains("USERNAME-GITHUB") || typeUpper.Contains("USERNAME_GITHUB") ||
+                                (typeUpper.Contains("GITHUB") && !typeUpper.Contains("EMAIL")) ||
+                                (providerUpper.Contains("USERNAME-GITHUB") || (providerUpper.Contains("GITHUB") && !providerUpper.Contains("EMAIL")));
+        bool isUsernameTelegram = typeUpper.Contains("USERNAME-TELEGRAM") || typeUpper.Contains("USERNAME_TELEGRAM") || typeUpper.Contains("TELEGRAM") ||
+                                  providerUpper.Contains("USERNAME-TELEGRAM") || providerUpper.Contains("TELEGRAM");
+        bool isUsernamePresence = typeUpper.Contains("USERNAME-PRESENCE") || typeUpper.Contains("USERNAME_PRESENCE") || typeUpper.Contains("PRESENCE") ||
+                                  providerUpper.Contains("USERNAME-PRESENCE") || providerUpper.Contains("PRESENCE");
 
         bool isDnsType = typeUpper.Contains("DNS") ||
                          providerUpper.Contains("DNS") ||
@@ -218,6 +293,36 @@ public partial class FindingItemViewModel : ObservableObject
         {
             IsMxEmail = true;
             MxEmailData = ExtractMxEmailData(model);
+        }
+        else if (isIpGeo)
+        {
+            IsIpGeo = true;
+            IpGeoData = ExtractIpGeoData(model);
+        }
+        else if (isIpRdns)
+        {
+            IsIpReverseDns = true;
+            IpReverseDnsData = ExtractIpReverseDnsData(model);
+        }
+        else if (isIpShodan)
+        {
+            IsIpShodan = true;
+            IpShodanData = ExtractIpShodanData(model);
+        }
+        else if (isUsernameGithub)
+        {
+            IsUsernameGithub = true;
+            UsernameGithubData = ExtractUsernameGithubData(model);
+        }
+        else if (isUsernameTelegram)
+        {
+            IsUsernameTelegram = true;
+            UsernameTelegramData = ExtractUsernameTelegramData(model);
+        }
+        else if (isUsernamePresence)
+        {
+            IsUsernamePresence = true;
+            UsernamePresenceData = ExtractUsernamePresenceData(model);
         }
         else if (isDnsType)
         {
@@ -976,6 +1081,242 @@ public partial class FindingItemViewModel : ObservableObject
         return data;
     }
 
+    private ParsedIpGeoData ExtractIpGeoData(FindingModel model)
+    {
+        var data = new ParsedIpGeoData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Ip", out var ip) || TryGetString(root, "query", out ip)) data.Ip = ip;
+                if (TryGetString(root, "Country", out var country)) data.Country = country;
+                if (TryGetString(root, "CountryCode", out var cc)) data.CountryCode = cc;
+                if (TryGetString(root, "Region", out var region) || TryGetString(root, "regionName", out region)) data.Region = region;
+                if (TryGetString(root, "City", out var city)) data.City = city;
+                if (TryGetDouble(root, "Latitude", out var lat) || TryGetDouble(root, "lat", out lat)) data.Latitude = lat;
+                if (TryGetDouble(root, "Longitude", out var lon) || TryGetDouble(root, "lon", out lon)) data.Longitude = lon;
+                if (TryGetString(root, "Timezone", out var tz)) data.Timezone = tz;
+                if (TryGetString(root, "Isp", out var isp)) data.Isp = isp;
+                if (TryGetString(root, "Org", out var org)) data.Org = org;
+                if (TryGetString(root, "Asn", out var asn) || TryGetString(root, "as", out asn)) data.Asn = asn;
+                if (TryGetBool(root, "IsMobile", out var mobile) || TryGetBool(root, "mobile", out mobile)) data.IsMobile = mobile;
+                if (TryGetBool(root, "IsProxy", out var proxy) || TryGetBool(root, "proxy", out proxy)) data.IsProxy = proxy;
+                if (TryGetBool(root, "IsHosting", out var hosting) || TryGetBool(root, "hosting", out hosting)) data.IsHosting = hosting;
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedIpReverseDnsData ExtractIpReverseDnsData(FindingModel model)
+    {
+        var data = new ParsedIpReverseDnsData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Ip", out var ip)) data.Ip = ip;
+                if (TryGetString(root, "ArpaQuery", out var arpa) || TryGetString(root, "arpa", out arpa)) data.ArpaQuery = arpa;
+                if (TryGetStringList(root, "Hostnames", out var hosts) || TryGetStringList(root, "names", out hosts) || TryGetStringList(root, "domains", out hosts))
+                {
+                    data.Hostnames = hosts;
+                }
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedUsernameGithubData ExtractUsernameGithubData(FindingModel model)
+    {
+        var data = new ParsedUsernameGithubData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetLong(root, "Id", out var id) || TryGetLong(root, "id", out id)) data.Id = id;
+                if (TryGetString(root, "Username", out var u) || TryGetString(root, "username", out u) || TryGetString(root, "login", out u)) data.Username = u;
+                if (TryGetString(root, "Name", out var n) || TryGetString(root, "name", out n)) data.Name = n;
+                if (TryGetString(root, "ProfileUrl", out var p) || TryGetString(root, "profileUrl", out p) || TryGetString(root, "html_url", out p)) data.ProfileUrl = p;
+                if (TryGetString(root, "AvatarUrl", out var a) || TryGetString(root, "avatarUrl", out a) || TryGetString(root, "avatar_url", out a)) data.AvatarUrl = a;
+                if (TryGetString(root, "Bio", out var b) || TryGetString(root, "bio", out b)) data.Bio = b;
+                if (TryGetString(root, "Company", out var c) || TryGetString(root, "company", out c)) data.Company = c;
+                if (TryGetString(root, "Location", out var l) || TryGetString(root, "location", out l)) data.Location = l;
+                if (TryGetString(root, "Email", out var e) || TryGetString(root, "email", out e)) data.Email = e;
+                if (TryGetString(root, "Blog", out var bl) || TryGetString(root, "blog", out bl)) data.Blog = bl;
+                if (TryGetString(root, "Twitter", out var tw) || TryGetString(root, "twitter", out tw) || TryGetString(root, "twitter_username", out tw)) data.Twitter = tw;
+                if (TryGetInt(root, "PublicRepos", out var pr) || TryGetInt(root, "publicRepos", out pr) || TryGetInt(root, "public_repos", out pr)) data.PublicRepos = pr;
+                if (TryGetInt(root, "Followers", out var fl) || TryGetInt(root, "followers", out fl)) data.Followers = fl;
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.ProfileUrl) && !string.IsNullOrWhiteSpace(data.Username))
+        {
+            data.ProfileUrl = $"https://github.com/{data.Username.TrimStart('@')}";
+        }
+
+        return data;
+    }
+
+    private ParsedUsernameTelegramData ExtractUsernameTelegramData(FindingModel model)
+    {
+        var data = new ParsedUsernameTelegramData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Username", out var u) || TryGetString(root, "username", out u)) data.Username = u;
+                if (TryGetString(root, "Title", out var t) || TryGetString(root, "title", out t) || TryGetString(root, "name", out t)) data.Title = t;
+                if (TryGetString(root, "Description", out var d) || TryGetString(root, "description", out d) || TryGetString(root, "bio", out d)) data.Description = d;
+                if (TryGetString(root, "AvatarUrl", out var a) || TryGetString(root, "avatarUrl", out a) || TryGetString(root, "avatar_url", out a) || TryGetString(root, "photo", out a)) data.AvatarUrl = a;
+                if (TryGetString(root, "Url", out var url) || TryGetString(root, "url", out url) || TryGetString(root, "link", out url)) data.Url = url;
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrWhiteSpace(data.Url) && !string.IsNullOrWhiteSpace(data.Username))
+        {
+            data.Url = $"https://t.me/{data.Username.TrimStart('@')}";
+        }
+
+        return data;
+    }
+
+    private ParsedUsernamePresenceData ExtractUsernamePresenceData(FindingModel model)
+    {
+        var data = new ParsedUsernamePresenceData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Username", out var u) || TryGetString(root, "username", out u)) data.Username = u;
+                if (TryGetString(root, "Platform", out var p) || TryGetString(root, "platform", out p)) data.Platform = p;
+                if (TryGetString(root, "Url", out var url) || TryGetString(root, "url", out url) || TryGetString(root, "link", out url)) data.Url = url;
+                if (TryGetBool(root, "Exists", out var ex) || TryGetBool(root, "exists", out ex)) data.Exists = ex;
+                if (TryGetString(root, "Details", out var dt) || TryGetString(root, "details", out dt)) data.Details = dt;
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedIpShodanData ExtractIpShodanData(FindingModel model)
+    {
+        var data = new ParsedIpShodanData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Ip", out var ip)) data.Ip = ip;
+                if (TryGetIntList(root, "Ports", out var ports)) data.Ports = ports;
+                if (TryGetStringList(root, "Hostnames", out var hostnames)) data.Hostnames = hostnames;
+                if (TryGetStringList(root, "Tags", out var tags)) data.Tags = tags;
+                if (TryGetStringList(root, "Cpes", out var cpes)) data.Cpes = cpes;
+                if (TryGetStringList(root, "Vulnerabilities", out var vulns) || TryGetStringList(root, "vulns", out vulns))
+                {
+                    data.Vulnerabilities = vulns;
+                }
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private static bool TryGetDouble(JsonElement obj, string propertyName, out double result)
+    {
+        result = 0;
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (prop.Value.TryGetDouble(out result)) return true;
+                if (prop.Value.ValueKind == JsonValueKind.String && double.TryParse(prop.Value.GetString(), CultureInfo.InvariantCulture, out result)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryGetStringList(JsonElement obj, string propertyName, out List<string> list)
+    {
+        list = [];
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in prop.Value.EnumerateArray())
+                {
+                    var str = item.GetString();
+                    if (!string.IsNullOrWhiteSpace(str))
+                    {
+                        list.Add(str.Trim());
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryGetIntList(JsonElement obj, string propertyName, out List<int> list)
+    {
+        list = [];
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in prop.Value.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.Number && item.TryGetInt32(out var num))
+                    {
+                        list.Add(num);
+                    }
+                    else if (item.ValueKind == JsonValueKind.String && int.TryParse(item.GetString(), out var parsed))
+                    {
+                        list.Add(parsed);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [RelayCommand]
+    private void PivotSearch(string? target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return;
+        PivotSearchRequested?.Invoke(target.Trim());
+    }
+
     private static string FormatJson(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
@@ -1064,6 +1405,24 @@ public partial class FindingItemViewModel : ObservableObject
                 : GravatarEmailData.FormattedUsername;
             profileUrl = GravatarEmailData.ProfileUrl;
             accentColor = Color.FromRgb(0, 210, 255);
+        }
+        else if (IsUsernameGithub && UsernameGithubData != null)
+        {
+            title = loc.GetString("Avatar_Dialog_Title_GitHub");
+            avatarUrl = UsernameGithubData.AvatarUrl;
+            displayName = UsernameGithubData.DisplayTitle;
+            subtitle = UsernameGithubData.FormattedUsername;
+            profileUrl = UsernameGithubData.ProfileUrl;
+            accentColor = Color.FromRgb(137, 87, 229);
+        }
+        else if (IsUsernameTelegram && UsernameTelegramData != null)
+        {
+            title = loc.GetString("Avatar_Dialog_Title_Telegram");
+            avatarUrl = UsernameTelegramData.AvatarUrl;
+            displayName = UsernameTelegramData.DisplayTitle;
+            subtitle = UsernameTelegramData.FormattedUsername;
+            profileUrl = UsernameTelegramData.Url;
+            accentColor = Color.FromRgb(42, 171, 238);
         }
         else
         {

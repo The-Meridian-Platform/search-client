@@ -78,6 +78,12 @@ public partial class SearchViewModel : ObservableObject
     private int _emailFindingsCount;
 
     [ObservableProperty]
+    private int _usernameFindingsCount;
+
+    [ObservableProperty]
+    private int _ipFindingsCount;
+
+    [ObservableProperty]
     private string _activeFilter = "All"; // All, Email, DNS, Whois, Subdomains, Tech, Other
 
     [ObservableProperty]
@@ -114,6 +120,13 @@ public partial class SearchViewModel : ObservableObject
         _toastService = toastService ?? new ToastService(new SettingsService());
 
         BindingOperations.EnableCollectionSynchronization(Findings, _findingsLock);
+
+        FindingItemViewModel.PivotSearchRequested += target =>
+        {
+            if (string.IsNullOrWhiteSpace(target)) return;
+            TargetInput = target.Trim();
+            _ = StartSearchAsync();
+        };
 
         _timer = new DispatcherTimer(DispatcherPriority.Render)
         {
@@ -166,6 +179,8 @@ public partial class SearchViewModel : ObservableObject
         SubdomainFindingsCount = 0;
         HttpTechFindingsCount = 0;
         EmailFindingsCount = 0;
+        UsernameFindingsCount = 0;
+        IpFindingsCount = 0;
         ElapsedTime = "00:00.000";
 
         SessionStatus = "Pending";
@@ -294,6 +309,8 @@ public partial class SearchViewModel : ObservableObject
         SubdomainFindingsCount = 0;
         HttpTechFindingsCount = 0;
         EmailFindingsCount = 0;
+        UsernameFindingsCount = 0;
+        IpFindingsCount = 0;
         ElapsedTime = "00:00.000";
         SessionStatus = "Ready";
         StatusMessage = "Готов к запуску поиска";
@@ -374,7 +391,9 @@ public partial class SearchViewModel : ObservableObject
         // 1. Category filter
         if (ActiveFilter != "All")
         {
-            if (string.Equals(ActiveFilter, "Email", StringComparison.OrdinalIgnoreCase) && !finding.IsEmailFinding)
+            if (string.Equals(ActiveFilter, "Email", StringComparison.OrdinalIgnoreCase) && !finding.IsEmailFinding && !finding.IsUsernameFinding)
+                return false;
+            if (string.Equals(ActiveFilter, "IP", StringComparison.OrdinalIgnoreCase) && !finding.IsIpFinding)
                 return false;
             if (string.Equals(ActiveFilter, "DNS", StringComparison.OrdinalIgnoreCase) && !finding.IsDns)
                 return false;
@@ -385,7 +404,7 @@ public partial class SearchViewModel : ObservableObject
             if (string.Equals(ActiveFilter, "Tech", StringComparison.OrdinalIgnoreCase) && !finding.IsHttpTech)
                 return false;
             if (string.Equals(ActiveFilter, "Other", StringComparison.OrdinalIgnoreCase) &&
-                (finding.IsEmailFinding || finding.IsDns || finding.IsWhois || finding.IsSubdomain || finding.IsHttpTech))
+                (finding.IsEmailFinding || finding.IsUsernameFinding || finding.IsIpFinding || finding.IsDns || finding.IsWhois || finding.IsSubdomain || finding.IsHttpTech))
                 return false;
         }
 
@@ -397,6 +416,34 @@ public partial class SearchViewModel : ObservableObject
         if (finding.Type.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
         if (finding.ProviderKey.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
         if (finding.RawJson.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (finding.IpGeoData?.Ip.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpGeoData?.Country.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpGeoData?.City.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpGeoData?.Asn.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpGeoData?.Isp.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpGeoData?.Org.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpReverseDnsData?.Ip.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpReverseDnsData?.ArpaQuery.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpReverseDnsData?.Hostnames.Any(h => h.Contains(query, StringComparison.OrdinalIgnoreCase)) == true) return true;
+        if (finding.IpShodanData?.Ip.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.IpShodanData?.Ports.Any(p => p.ToString().Contains(query)) == true) return true;
+        if (finding.IpShodanData?.Hostnames.Any(h => h.Contains(query, StringComparison.OrdinalIgnoreCase)) == true) return true;
+        if (finding.IpShodanData?.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase)) == true) return true;
+        if (finding.IpShodanData?.Vulnerabilities.Any(v => v.Contains(query, StringComparison.OrdinalIgnoreCase)) == true) return true;
+
+        if (finding.UsernameGithubData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameGithubData?.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameGithubData?.Bio?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameGithubData?.Company?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameGithubData?.Location?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameGithubData?.Email?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameTelegramData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameTelegramData?.Title.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernameTelegramData?.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernamePresenceData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernamePresenceData?.Platform.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (finding.UsernamePresenceData?.Details?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
 
         // Email OSINT checks
         if (finding.GitHubEmailData?.Username.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return true;
@@ -470,6 +517,8 @@ public partial class SearchViewModel : ObservableObject
                     }
                     TotalFindingsCount++;
                     if (vm.IsEmailFinding) EmailFindingsCount++;
+                    else if (vm.IsUsernameFinding) { EmailFindingsCount++; UsernameFindingsCount++; }
+                    else if (vm.IsIpFinding) IpFindingsCount++;
                     else if (vm.IsDns) DnsFindingsCount++;
                     else if (vm.IsWhois) WhoisFindingsCount++;
                     else if (vm.IsSubdomain) SubdomainFindingsCount++;
@@ -513,6 +562,9 @@ public partial class SearchViewModel : ObservableObject
         WhoisFindingsCount = Findings.Count(f => f.IsWhois);
         SubdomainFindingsCount = Findings.Count(f => f.IsSubdomain);
         HttpTechFindingsCount = Findings.Count(f => f.IsHttpTech);
+        EmailFindingsCount = Findings.Count(f => f.IsEmailFinding || f.IsUsernameFinding);
+        UsernameFindingsCount = Findings.Count(f => f.IsUsernameFinding);
+        IpFindingsCount = Findings.Count(f => f.IsIpFinding);
 
         SafeRefreshFindingsView();
     }

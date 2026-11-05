@@ -9,6 +9,7 @@
         xmlns:conv="clr-namespace:MeridianClient.Converters"
         mc:Ignorable="d"
         Title="Meridian Search Platform — Cyber OSINT"
+        Icon="pack://application:,,,/Assets/app_icon.png"
         WindowBackdropType="None"
         ExtendsContentIntoTitleBar="True"
         WindowCornerPreference="Round"

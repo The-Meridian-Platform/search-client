@@ -39,6 +39,7 @@ public partial class MainViewModel : ObservableObject
         History.SessionDetailsLoaded += session =>
         {
             Search.LoadExistingSession(session);
+            Graph.SelectedSession = session;
             _ = Graph.LoadSessionByIdAsync(session.EffectiveId, session.EffectiveTarget);
             NavigateTo("Search");
         };
@@ -75,9 +76,12 @@ public partial class MainViewModel : ObservableObject
         else if (destination == "Graph")
         {
             _ = History.LoadHistoryAsync();
-            if (Graph.IsLiveMode && Graph.Nodes.Count == 0)
+            if (Graph.IsLiveMode)
             {
-                Graph.SyncFromLiveSearch();
+                if (Graph.Nodes.Count == 0 && Search.Findings.Count > 0)
+                {
+                    Graph.SyncFromLiveSearch();
+                }
             }
         }
     }

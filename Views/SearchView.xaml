@@ -1,4 +1,4 @@
-<UserControl x:Class="MeridianClient.Views.SearchView"
+﻿<UserControl x:Class="MeridianClient.Views.SearchView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -425,13 +425,29 @@
                             BorderBrush="#338957E5"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="10,4">
+                            Padding="10,4"
+                            Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource Search_Metric_Email}" Foreground="#C084FC" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
                             <TextBlock Text="{Binding EmailFindingsCount}"
                                        FontWeight="Bold"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                        Foreground="#8957E5"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1A00D2FF"
+                            BorderBrush="#3300D2FF"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="IP:" Foreground="#67E8F9" FontSize="10" FontWeight="Bold" Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding IpFindingsCount}"
+                                       FontWeight="Bold"
+                                       FontFamily="JetBrains Mono, Cascadia Code, Consolas"
+                                       Foreground="#00D2FF"
                                        FontSize="12" />
                         </StackPanel>
                     </Border>
@@ -616,6 +632,11 @@
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Tech, Mode=OneWay}"
                                      Command="{Binding SetFilterCommand}"
                                      CommandParameter="Tech"
+                                     Style="{StaticResource CyberFilterChipStyle}" />
+                        <RadioButton Content="IP"
+                                     IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=IP, Mode=OneWay}"
+                                     Command="{Binding SetFilterCommand}"
+                                     CommandParameter="IP"
                                      Style="{StaticResource CyberFilterChipStyle}" />
                         <RadioButton Content="{DynamicResource Search_FilterOther}"
                                      IsChecked="{Binding ActiveFilter, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Other, Mode=OneWay}"
@@ -1726,7 +1747,650 @@
                                         </Border>
                                     </StackPanel>
 
-                                    <!-- 9. Generic Other Template -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsIpGeo, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Border Background="#2000D2FF"
+                                                            BorderBrush="#4D00D2FF"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="8,3"
+                                                            Margin="0,0,10,4"
+                                                            VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding IpGeoData.FlagEmoji}" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Visibility="{Binding IpGeoData.FlagEmoji, Converter={StaticResource NotEmptyToVis}}" />
+                                                            <TextBlock Text="{Binding IpGeoData.LocationBadgeText}" FontSize="12" FontWeight="Bold" FontFamily="JetBrains Mono, Segoe UI" Foreground="#00D2FF" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#25A855F7"
+                                                            BorderBrush="#A855F7"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="0,0,8,4"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{Binding IpGeoData.IsHosting, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="DATACENTER / HOSTING" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#C084FC" />
+                                                    </Border>
+
+                                                    <Border Background="#25F43F5E"
+                                                            BorderBrush="#F43F5E"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="0,0,8,4"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{Binding IpGeoData.IsProxy, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="PROXY / VPN" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#FB7185" />
+                                                    </Border>
+
+                                                    <Border Background="#2500E599"
+                                                            BorderBrush="#00E599"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="0,0,8,4"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{Binding IpGeoData.IsMobile, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="MOBILE NETWORK" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#34D399" />
+                                                    </Border>
+                                                </WrapPanel>
+
+                                                <WrapPanel Orientation="Horizontal" Margin="2,4,0,0">
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,16,2" Visibility="{Binding IpGeoData.HasCoordinates, Converter={StaticResource BoolToVis}}">
+                                                        <ui:SymbolIcon Symbol="Location24" FontSize="12" Foreground="#64748B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding IpGeoData.Coordinates}" FontFamily="JetBrains Mono" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                                                        <Button Command="{Binding CopyValueCommand}" CommandParameter="{Binding IpGeoData.Coordinates}"
+                                                                Width="18" Height="18" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                                Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Скопировать координаты">
+                                                            <ui:SymbolIcon Symbol="Copy24" FontSize="10" Foreground="#64748B" />
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,16,2" Visibility="{Binding IpGeoData.HasTimezone, Converter={StaticResource BoolToVis}}">
+                                                        <ui:SymbolIcon Symbol="Clock24" FontSize="12" Foreground="#64748B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding IpGeoData.Timezone}" FontFamily="JetBrains Mono" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,16,2">
+                                                        <ui:SymbolIcon Symbol="Server24" FontSize="12" Foreground="#64748B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding IpGeoData.Ip}" FontFamily="JetBrains Mono" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" />
+                                                        <Button Command="{Binding CopyValueCommand}" CommandParameter="{Binding IpGeoData.Ip}"
+                                                                Width="18" Height="18" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                                Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Скопировать IP адрес">
+                                                            <ui:SymbolIcon Symbol="Copy24" FontSize="10" Foreground="#64748B" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </WrapPanel>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Margin="0,4,0,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="AUTONOMOUS SYSTEM (ASN)" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4" />
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <ui:SymbolIcon Symbol="Router24" FontSize="13" Foreground="#6366F1" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding IpGeoData.Asn, TargetNullValue='—', FallbackValue='—'}" FontFamily="JetBrains Mono" FontSize="12" FontWeight="SemiBold" Foreground="#E2E8F0" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="INTERNET SERVICE PROVIDER / ORG" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4" />
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <ui:SymbolIcon Symbol="Globe24" FontSize="13" Foreground="#00D2FF" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding IpGeoData.Isp, TargetNullValue='—', FallbackValue='—'}" FontFamily="JetBrains Mono" FontSize="12" Foreground="#CBD5E1" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsIpReverseDns, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <WrapPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Foreground="#818CF8" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding IpReverseDnsData.ArpaQuery}" FontFamily="JetBrains Mono" FontSize="13" FontWeight="Bold" Foreground="#818CF8" VerticalAlignment="Center" />
+                                            <Border Background="#20818CF8" BorderBrush="#4D818CF8" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="PTR" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#A5B4FC" />
+                                            </Border>
+                                            <Button Command="{Binding CopyValueCommand}" CommandParameter="{Binding IpReverseDnsData.ArpaQuery}"
+                                                    Width="20" Height="20" Padding="0" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Скопировать ARPA запрос">
+                                                <ui:SymbolIcon Symbol="Copy24" FontSize="11" Foreground="#64748B" />
+                                            </Button>
+                                        </WrapPanel>
+
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <TextBlock Text="RESOLVED HOSTNAMES (PTR)" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding IpReverseDnsData.HostnamesCount, StringFormat='({0})'}" FontSize="10" FontWeight="Bold" Foreground="#818CF8" />
+                                                </StackPanel>
+                                                <ItemsControl ItemsSource="{Binding IpReverseDnsData.Hostnames}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Command="{Binding PivotSearchCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Margin="0,0,8,6"
+                                                                    Padding="0"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Cursor="Hand"
+                                                                    ToolTip="Нажмите для запуска Pivot-поиска по этому хосту">
+                                                                <Border Background="#1A818CF8" BorderBrush="#4D818CF8" BorderThickness="1" CornerRadius="6" Padding="10,4">
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <ui:SymbolIcon Symbol="Globe24" FontSize="12" Foreground="#818CF8" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                                        <TextBlock Text="{Binding}" FontFamily="JetBrains Mono" FontSize="12" FontWeight="SemiBold" Foreground="#F1F5F9" VerticalAlignment="Center" />
+                                                                        <ui:SymbolIcon Symbol="ArrowRight24" FontSize="10" Foreground="#818CF8" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsIpShodan, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <WrapPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="Shield24" FontSize="16" Foreground="#FFB800" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="SHODAN INTERNETDB" FontSize="13" FontWeight="Black" Foreground="#F8FAFC" VerticalAlignment="Center" />
+
+                                            <Border Background="#2500E599" BorderBrush="#4D00E599" BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                    Visibility="{Binding IpShodanData.HasVulns, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="ShieldCheckmark24" FontSize="12" Foreground="#00E599" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="NO KNOWN VULNERABILITIES" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#00E599" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Background="#25F43F5E" BorderBrush="#F43F5E" BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                    Visibility="{Binding IpShodanData.HasVulns, Converter={StaticResource BoolToVis}}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="ShieldError24" FontSize="12" Foreground="#F43F5E" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding IpShodanData.VulnsCount, StringFormat='CRITICAL CVE ({0})'}" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#F43F5E" />
+                                                </StackPanel>
+                                            </Border>
+                                        </WrapPanel>
+
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Margin="0,0,0,8"
+                                                Visibility="{Binding IpShodanData.HasPorts, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <TextBlock Text="OPEN PORTS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding IpShodanData.PortsCount, StringFormat='({0})'}" FontSize="10" FontWeight="Bold" Foreground="#FFB800" />
+                                                </StackPanel>
+                                                <ItemsControl ItemsSource="{Binding IpShodanData.Ports}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#20FFB800" BorderBrush="#4DFFB800" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,6,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="PlugDisconnected24" FontSize="11" Foreground="#FFB800" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding}" FontFamily="JetBrains Mono" FontSize="11" FontWeight="Bold" Foreground="#FEF08A" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#120D1524"
+                                                BorderBrush="#1AFFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Margin="0,0,0,8"
+                                                Visibility="{Binding IpShodanData.HasTags, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel>
+                                                <TextBlock Text="SERVICE TAGS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6" />
+                                                <ItemsControl ItemsSource="{Binding IpShodanData.Tags}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1A00D2FF" BorderBrush="#3300D2FF" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,6,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="Tag24" FontSize="11" Foreground="#00D2FF" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding}" FontFamily="JetBrains Mono" FontSize="11" Foreground="#E0F2FE" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#1AF43F5E"
+                                                BorderBrush="#4DF43F5E"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10"
+                                                Visibility="{Binding IpShodanData.HasVulns, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <ui:SymbolIcon Symbol="ShieldError24" FontSize="14" Foreground="#F43F5E" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="DETECTED CVE VULNERABILITIES" FontSize="10" FontWeight="Bold" Foreground="#F43F5E" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <ItemsControl ItemsSource="{Binding IpShodanData.Vulnerabilities}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#25F43F5E" BorderBrush="#F43F5E" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,6,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding}" FontFamily="JetBrains Mono" FontSize="11" FontWeight="Bold" Foreground="#FECDD3" />
+                                                                    <Button Command="{Binding PivotSearchCommand}"
+                                                                            CommandParameter="{Binding}"
+                                                                            Width="16" Height="16" Padding="0" Margin="6,0,0,0"
+                                                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Скопировать / исследовать CVE">
+                                                                        <ui:SymbolIcon Symbol="Copy24" FontSize="10" Foreground="#FDA4AF" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+
+                                    <!-- USERNAME: GITHUB PROFILE CARD -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsUsernameGithub, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Avatar with Preview modal trigger -->
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PreviewAvatarCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,14,0"
+                                                    Cursor="Hand"
+                                                    ToolTip="Просмотреть аватар">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="avatarBorder"
+                                                                Width="52" Height="52"
+                                                                CornerRadius="26"
+                                                                Background="#1A8957E5"
+                                                                BorderBrush="#4D8957E5"
+                                                                BorderThickness="1.5"
+                                                                ClipToBounds="True">
+                                                            <Grid>
+                                                                <ui:SymbolIcon Symbol="PersonCircle24" FontSize="28" Foreground="#8957E5"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                <Image Source="{Binding UsernameGithubData.AvatarUrl}"
+                                                                       Stretch="UniformToFill"
+                                                                       Width="52" Height="52"
+                                                                       Visibility="{Binding UsernameGithubData.HasAvatar, Converter={StaticResource BoolToVis}}" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="avatarBorder" Property="BorderBrush" Value="#8957E5" />
+                                                                <Setter TargetName="avatarBorder" Property="Background" Value="#338957E5" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <!-- Main Profile Info -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding UsernameGithubData.DisplayTitle}"
+                                                               FontSize="16"
+                                                               FontWeight="Black"
+                                                               Foreground="#F0F6FC"
+                                                               VerticalAlignment="Center" />
+                                                    <Border Background="#258957E5"
+                                                            BorderBrush="#8957E5"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="10,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding UsernameGithubData.FormattedUsername}"
+                                                                   FontFamily="JetBrains Mono, Segoe UI"
+                                                                   FontSize="11"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#A855F7" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <!-- Bio -->
+                                                <TextBlock Text="{Binding UsernameGithubData.Bio}"
+                                                           FontSize="12"
+                                                           Foreground="#94A3B8"
+                                                           Margin="0,4,0,0"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{Binding UsernameGithubData.HasBio, Converter={StaticResource BoolToVis}}" />
+
+                                                <!-- Chips / Badges Row: Location, Company, Email, Blog -->
+                                                <WrapPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                                            CornerRadius="6" Padding="8,3" Margin="0,0,8,4"
+                                                            Visibility="{Binding UsernameGithubData.HasCompany, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <ui:SymbolIcon Symbol="Building24" FontSize="11" Foreground="#60A5FA" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.Company}" FontSize="11" Foreground="#CBD5E1" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                                            CornerRadius="6" Padding="8,3" Margin="0,0,8,4"
+                                                            Visibility="{Binding UsernameGithubData.HasLocation, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <ui:SymbolIcon Symbol="Location24" FontSize="11" Foreground="#38BDF8" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.Location}" FontSize="11" Foreground="#CBD5E1" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                                            CornerRadius="6" Padding="8,3" Margin="0,0,8,4"
+                                                            Visibility="{Binding UsernameGithubData.HasEmail, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <ui:SymbolIcon Symbol="Mail24" FontSize="11" Foreground="#F59E0B" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.Email}" FontSize="11" FontFamily="JetBrains Mono" Foreground="#CBD5E1" />
+                                                            <Button Command="{Binding PivotSearchCommand}"
+                                                                    CommandParameter="{Binding UsernameGithubData.Email}"
+                                                                    Width="16" Height="16" Padding="0" Margin="6,0,0,0"
+                                                                    Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Исследовать Email">
+                                                                <ui:SymbolIcon Symbol="ArrowRight24" FontSize="10" Foreground="#F59E0B" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                                            CornerRadius="6" Padding="8,3" Margin="0,0,8,4"
+                                                            Visibility="{Binding UsernameGithubData.HasBlog, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <ui:SymbolIcon Symbol="Globe24" FontSize="11" Foreground="#00E599" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.Blog}" FontSize="11" Foreground="#CBD5E1" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                                            CornerRadius="6" Padding="8,3" Margin="0,0,8,4"
+                                                            Visibility="{Binding UsernameGithubData.HasTwitter, Converter={StaticResource BoolToVis}}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="X / @" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,2,0" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.Twitter}" FontSize="11" Foreground="#CBD5E1" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- Right Side: Stats (Repos & Followers) + Profile Button -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                                                <Border Background="#120D1524" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,10,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <StackPanel Margin="0,0,12,0" HorizontalAlignment="Center">
+                                                            <TextBlock Text="REPOS" FontSize="9" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.FormattedRepos}" FontSize="13" FontWeight="Black" FontFamily="JetBrains Mono" Foreground="#38BDF8" HorizontalAlignment="Center" />
+                                                        </StackPanel>
+                                                        <Rectangle Width="1" Fill="#20FFFFFF" Margin="0,2,12,2" />
+                                                        <StackPanel HorizontalAlignment="Center">
+                                                            <TextBlock Text="FOLLOWERS" FontSize="9" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding UsernameGithubData.FormattedFollowers}" FontSize="13" FontWeight="Black" FontFamily="JetBrains Mono" Foreground="#A855F7" HorizontalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding UsernameGithubData.ProfileUrl}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="34"
+                                                        Padding="12,0"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip="Открыть GitHub профиль">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Open24" FontSize="13" Foreground="#A855F7" Margin="0,0,6,0" />
+                                                        <TextBlock Text="GitHub" FontWeight="Bold" FontSize="11" Foreground="#A855F7" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- USERNAME: TELEGRAM PROFILE CARD -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsUsernameTelegram, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Telegram Avatar -->
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding PreviewAvatarCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,14,0"
+                                                    Cursor="Hand"
+                                                    ToolTip="Просмотреть аватар">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="avatarBorder"
+                                                                Width="50" Height="50"
+                                                                CornerRadius="25"
+                                                                Background="#1A2AABEE"
+                                                                BorderBrush="#4D2AABEE"
+                                                                BorderThickness="1.5"
+                                                                ClipToBounds="True">
+                                                            <Grid>
+                                                                <ui:SymbolIcon Symbol="Send24" FontSize="24" Foreground="#2AABEE"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                <Image Source="{Binding UsernameTelegramData.AvatarUrl}"
+                                                                       Stretch="UniformToFill"
+                                                                       Width="50" Height="50"
+                                                                       Visibility="{Binding UsernameTelegramData.HasAvatar, Converter={StaticResource BoolToVis}}" />
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="avatarBorder" Property="BorderBrush" Value="#2AABEE" />
+                                                                <Setter TargetName="avatarBorder" Property="Background" Value="#332AABEE" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <!-- Telegram Details -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding UsernameTelegramData.DisplayTitle}"
+                                                               FontSize="16"
+                                                               FontWeight="Black"
+                                                               Foreground="#F0F6FC"
+                                                               VerticalAlignment="Center" />
+                                                    <Border Background="#202AABEE"
+                                                            BorderBrush="#4D2AABEE"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="10,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding UsernameTelegramData.FormattedUsername}"
+                                                                   FontFamily="JetBrains Mono, Segoe UI"
+                                                                   FontSize="11"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#2AABEE" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <!-- Telegram Bio / Description -->
+                                                <TextBlock Text="{Binding UsernameTelegramData.Description}"
+                                                           FontSize="12"
+                                                           Foreground="#94A3B8"
+                                                           Margin="0,4,0,0"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{Binding UsernameTelegramData.HasDescription, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+
+                                            <!-- Telegram External Link -->
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="14,0,0,0">
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding UsernameTelegramData.Url}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="34"
+                                                        Padding="12,0"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip="Открыть в Telegram">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Send24" FontSize="13" Foreground="#2AABEE" Margin="0,0,6,0" />
+                                                        <TextBlock Text="Telegram" FontWeight="Bold" FontSize="11" Foreground="#2AABEE" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- USERNAME: PLATFORM PRESENCE CARD (Reddit, Steam, GitLab, HackerNews) -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsUsernamePresence, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Platform Icon Badge -->
+                                            <Border Grid.Column="0"
+                                                    Width="44" Height="44"
+                                                    CornerRadius="10"
+                                                    Background="{Binding UsernamePresenceData.PlatformBadgeBackground}"
+                                                    BorderBrush="{Binding UsernamePresenceData.PlatformBadgeColor}"
+                                                    BorderThickness="1"
+                                                    Margin="0,0,14,0"
+                                                    VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="CheckmarkCircle24"
+                                                               FontSize="22"
+                                                               Foreground="{Binding UsernamePresenceData.PlatformBadgeForeground}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <!-- Platform Details -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding UsernamePresenceData.Platform}"
+                                                               FontSize="15"
+                                                               FontWeight="Black"
+                                                               Foreground="#F0F6FC"
+                                                               VerticalAlignment="Center" />
+                                                    <Border Background="{Binding UsernamePresenceData.PlatformBadgeBackground}"
+                                                            BorderBrush="{Binding UsernamePresenceData.PlatformBadgeColor}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="7,2"
+                                                            Margin="10,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding UsernamePresenceData.FormattedUsername}"
+                                                                   FontFamily="JetBrains Mono"
+                                                                   FontSize="11"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{Binding UsernamePresenceData.PlatformBadgeForeground}" />
+                                                    </Border>
+                                                    <Border Background="#2000E599"
+                                                            BorderBrush="#4D00E599"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="6,2"
+                                                            Margin="8,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="EXISTS" FontSize="9" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#00E599" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <!-- Meta / Details (e.g. Karma, Active Profile) -->
+                                                <TextBlock Text="{Binding UsernamePresenceData.Details}"
+                                                           FontSize="12"
+                                                           Foreground="#94A3B8"
+                                                           Margin="0,4,0,0"
+                                                           Visibility="{Binding UsernamePresenceData.HasDetails, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+
+                                            <!-- Open Profile Button -->
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="14,0,0,0">
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding UsernamePresenceData.Url}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="34"
+                                                        Padding="12,0"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip="Открыть страницу профиля">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Open24" FontSize="13" Foreground="#94A3B8" Margin="0,0,6,0" />
+                                                        <TextBlock Text="Открыть" FontWeight="Bold" FontSize="11" Foreground="#E2E8F0" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
                                     <StackPanel Grid.Row="1"
                                                 Margin="0,4,0,4">
                                         <StackPanel.Style>
@@ -1740,6 +2404,8 @@
                                                             <Condition Binding="{Binding IsSubdomain}" Value="False" />
                                                             <Condition Binding="{Binding IsHttpTech}" Value="False" />
                                                             <Condition Binding="{Binding IsEmailFinding}" Value="False" />
+                                                            <Condition Binding="{Binding IsUsernameFinding}" Value="False" />
+                                                            <Condition Binding="{Binding IsIpFinding}" Value="False" />
                                                         </MultiDataTrigger.Conditions>
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </MultiDataTrigger>

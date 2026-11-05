@@ -98,6 +98,7 @@ public class LocalizationService : ILocalizationService
         ["Search_Card_Profile_Btn"] = "Профиль",
         ["Avatar_Dialog_Title_GitHub"] = "Профиль GitHub",
         ["Avatar_Dialog_Title_Gravatar"] = "Профиль Gravatar",
+        ["Avatar_Dialog_Title_Telegram"] = "Профиль Telegram",
         ["Avatar_Dialog_OpenProfile"] = "Открыть профиль",
         ["Avatar_Dialog_Close"] = "Закрыть",
 
@@ -117,7 +118,7 @@ public class LocalizationService : ILocalizationService
         ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand запущен для {0} ключевых находок (1 уровень глубины).",
         ["Graph_Btn_SmartLayout_ToolTip"] = "Организовать и зафиксировать (умная раскладка + стоп-физика)",
         ["Graph_Toast_SmartLayoutTitle"] = "Раскладка зафиксирована",
-        ["Graph_Toast_SmartLayoutSuccess"] = "Граф организован по орбитам без пересечений. Физика связей остановлена.",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Иерархическая структура выстроена (Maltego Tree). Физика остановлена.",
 
         // History View
         ["History_Title"] = "История поисковых сессий",
@@ -166,6 +167,9 @@ public class LocalizationService : ILocalizationService
         ["Settings_Notifications_Label"] = "ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ:",
         ["Settings_Notifications_Title"] = "Всплывающие Toast-уведомления",
         ["Settings_Notifications_Subtitle"] = "Отображать всплывающие уведомления о системных событиях, поиске и графе в нижнем правом углу",
+        ["Settings_Graph_Label"] = "ПАРАМЕТРЫ СВЯЗЕЙ ГРАФА:",
+        ["Settings_Graph_MergeShared_Title"] = "Объединять общие сущности в графе",
+        ["Settings_Graph_MergeShared_Subtitle"] = "Связывать одинаковые узлы (общие IP, юзернеймы, почты) в единый узел-мост между разными ветками поиска",
         ["Settings_DiagHeader"] = "ДИАГНОСТИКА СОЕДИНЕНИЯ:"
     };
 
@@ -248,6 +252,7 @@ public class LocalizationService : ILocalizationService
         ["Search_Card_Profile_Btn"] = "Profile",
         ["Avatar_Dialog_Title_GitHub"] = "GitHub Profile",
         ["Avatar_Dialog_Title_Gravatar"] = "Gravatar Profile",
+        ["Avatar_Dialog_Title_Telegram"] = "Telegram Profile",
         ["Avatar_Dialog_OpenProfile"] = "Open Profile",
         ["Avatar_Dialog_Close"] = "Close",
 
@@ -267,7 +272,7 @@ public class LocalizationService : ILocalizationService
         ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand launched for {0} priority findings (Depth 1).",
         ["Graph_Btn_SmartLayout_ToolTip"] = "Organize and Lock (smart layout + stop physics)",
         ["Graph_Toast_SmartLayoutTitle"] = "Layout Locked",
-        ["Graph_Toast_SmartLayoutSuccess"] = "Graph organized into non-overlapping orbits. Physics simulation stopped.",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Hierarchical structure arranged (Maltego Tree). Physics stopped.",
 
         // History View
         ["History_Title"] = "Reconnaissance Session History",
@@ -316,6 +321,9 @@ public class LocalizationService : ILocalizationService
         ["Settings_Notifications_Label"] = "POPUP NOTIFICATIONS:",
         ["Settings_Notifications_Title"] = "Popup Toast Notifications",
         ["Settings_Notifications_Subtitle"] = "Display popup notifications for system events, reconnaissance and graph in bottom-right corner",
+        ["Settings_Graph_Label"] = "RELATION GRAPH SETTINGS:",
+        ["Settings_Graph_MergeShared_Title"] = "Merge shared graph entities",
+        ["Settings_Graph_MergeShared_Subtitle"] = "Link identical entities (shared IPs, usernames, emails) into a single bridge node between different search targets",
         ["Settings_DiagHeader"] = "CONNECTION DIAGNOSTICS:"
     };
 

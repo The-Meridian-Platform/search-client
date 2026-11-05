@@ -24,6 +24,7 @@ public partial class GraphViewModel : ObservableObject
     private readonly IInvestigationService _investigationService;
     private readonly ILogService _logService;
     private readonly IToastService _toastService;
+    private readonly ISettingsService _settingsService;
     private readonly GraphSimulationEngine _physics = new();
     private readonly Random _random = new();
 
@@ -171,6 +172,7 @@ public partial class GraphViewModel : ObservableObject
         IMeridianStreamClient streamClient,
         IInvestigationService investigationService,
         ILogService logService,
+        ISettingsService settingsService,
         IToastService? toastService = null)
     {
         _searchViewModel = searchViewModel;
@@ -179,7 +181,8 @@ public partial class GraphViewModel : ObservableObject
         _streamClient = streamClient;
         _investigationService = investigationService;
         _logService = logService;
-        _toastService = toastService ?? new ToastService(new SettingsService());
+        _settingsService = settingsService;
+        _toastService = toastService ?? new ToastService(settingsService);
 
         Nodes.CollectionChanged += (s, e) => NodesCount = Nodes.Count;
         Edges.CollectionChanged += (s, e) => EdgesCount = Edges.Count;
@@ -382,7 +385,8 @@ public partial class GraphViewModel : ObservableObject
         }
 
         var newEdges = new List<GraphEdge>();
-        GraphDataMapper.MapFindingToGraph(finding, target, _nodeMap, newEdges, _random, 400, 300);
+        bool mergeShared = _settingsService.Settings.MergeSharedGraphEntities;
+        GraphDataMapper.MapFindingToGraph(finding, target, _nodeMap, newEdges, _random, 400, 300, mergeShared);
 
         foreach (var node in _nodeMap.Values)
         {
@@ -499,144 +503,250 @@ public partial class GraphViewModel : ObservableObject
             node.Vy = 0;
         }
 
-        var targetNodes = Nodes
-            .Where(n => n.Type == GraphNodeType.Target)
+        var inEdges = new Dictionary<GraphNode, List<GraphNode>>();
+        var outEdges = new Dictionary<GraphNode, List<GraphNode>>();
+        var allAdj = new Dictionary<GraphNode, List<GraphNode>>();
+
+        foreach (var node in Nodes)
+        {
+            inEdges[node] = new List<GraphNode>();
+            outEdges[node] = new List<GraphNode>();
+            allAdj[node] = new List<GraphNode>();
+        }
+
+        foreach (var edge in Edges)
+        {
+            if (allAdj.ContainsKey(edge.Source) && allAdj.ContainsKey(edge.Target))
+            {
+                outEdges[edge.Source].Add(edge.Target);
+                inEdges[edge.Target].Add(edge.Source);
+                allAdj[edge.Source].Add(edge.Target);
+                allAdj[edge.Target].Add(edge.Source);
+            }
+        }
+
+        var roots = Nodes
+            .Where(n => n.Type == GraphNodeType.Target && inEdges[n].Count == 0)
             .OrderBy(n => n.ExpansionDepth)
             .ThenByDescending(n => n.Label.Equals(TargetDisplay, StringComparison.OrdinalIgnoreCase))
             .ToList();
-        var hubs = targetNodes.Count > 0
-            ? targetNodes
-            : Nodes.OrderByDescending(n => Edges.Count(e => e.Source == n || e.Target == n)).Take(1).ToList();
 
-        if (hubs.Count == 0) hubs.Add(Nodes[0]);
-
-        double avgX = Nodes.Average(n => n.X);
-        double avgY = Nodes.Average(n => n.Y);
-        if (avgX < 200 || avgY < 200)
+        if (roots.Count == 0)
         {
-            avgX = 2500;
-            avgY = 2500;
-        }
-        double centerX = avgX;
-        double centerY = avgY;
-
-        int hubCount = hubs.Count;
-        if (hubCount == 1)
-        {
-            hubs[0].X = centerX;
-            hubs[0].Y = centerY;
-        }
-        else if (hubCount == 2)
-        {
-            hubs[0].X = centerX;
-            hubs[0].Y = centerY - 320;
-            hubs[1].X = centerX;
-            hubs[1].Y = centerY + 320;
-        }
-        else
-        {
-            double hubStep = 580.0;
-            double startY = centerY - ((hubCount - 1) * hubStep) / 2.0;
-            for (int i = 0; i < hubCount; i++)
-            {
-                hubs[i].X = centerX;
-                hubs[i].Y = startY + i * hubStep;
-            }
+            roots = Nodes
+                .Where(n => n.Type == GraphNodeType.Target)
+                .OrderBy(n => n.ExpansionDepth)
+                .ThenByDescending(n => n.Label.Equals(TargetDisplay, StringComparison.OrdinalIgnoreCase))
+                .Take(1)
+                .ToList();
         }
 
-        var adj = new Dictionary<GraphNode, List<GraphNode>>();
-        foreach (var node in Nodes)
+        if (roots.Count == 0)
         {
-            adj[node] = new List<GraphNode>();
-        }
-        foreach (var edge in Edges)
-        {
-            if (adj.ContainsKey(edge.Source) && adj.ContainsKey(edge.Target))
-            {
-                adj[edge.Source].Add(edge.Target);
-                adj[edge.Target].Add(edge.Source);
-            }
+            roots = Nodes.Where(n => inEdges[n].Count == 0).ToList();
         }
 
-        var hubAssignment = new Dictionary<GraphNode, GraphNode>();
-        var queue = new Queue<(GraphNode node, GraphNode hub)>();
-        foreach (var hub in hubs)
+        if (roots.Count == 0)
         {
-            hubAssignment[hub] = hub;
-            queue.Enqueue((hub, hub));
+            roots.Add(Nodes[0]);
         }
 
-        while (queue.Count > 0)
-        {
-            var (curr, h) = queue.Dequeue();
-            if (adj.TryGetValue(curr, out var neighbors))
-            {
-                foreach (var neighbor in neighbors)
-                {
-                    if (!hubAssignment.ContainsKey(neighbor))
-                    {
-                        hubAssignment[neighbor] = h;
-                        queue.Enqueue((neighbor, h));
-                    }
-                }
-            }
-        }
+        var visited = new HashSet<GraphNode>();
+        var treeChildren = new Dictionary<GraphNode, List<GraphNode>>();
+        var nodeLevels = new Dictionary<GraphNode, int>();
 
         foreach (var node in Nodes)
         {
-            if (!hubAssignment.ContainsKey(node))
+            treeChildren[node] = new List<GraphNode>();
+        }
+
+        var bfsQueue = new Queue<GraphNode>();
+        foreach (var root in roots)
+        {
+            if (visited.Add(root))
             {
-                hubAssignment[node] = hubs[0];
+                nodeLevels[root] = 0;
+                bfsQueue.Enqueue(root);
             }
         }
 
-        foreach (var hub in hubs)
+        while (bfsQueue.Count > 0)
         {
-            var satellites = Nodes
-                .Where(n => !hubs.Contains(n) && hubAssignment[n] == hub)
+            var curr = bfsQueue.Dequeue();
+            int currLevel = nodeLevels[curr];
+
+            var candidates = outEdges[curr]
                 .OrderBy(n => GetNodeTypePriority(n.Type))
                 .ThenBy(n => n.Label)
                 .ToList();
 
-            if (satellites.Count == 0) continue;
-
-            int satIndex = 0;
-            int ringIndex = 0;
-            double currentRadius = 150.0;
-            double radialStep = 110.0;
-
-            while (satIndex < satellites.Count)
+            foreach (var child in candidates)
             {
-                int capacity = Math.Max(6, (int)Math.Floor(2.0 * Math.PI * currentRadius / 175.0));
-                int countInRing = Math.Min(capacity, satellites.Count - satIndex);
-                double angleOffset = (ringIndex % 2 == 1) ? (Math.PI / Math.Max(countInRing, 1)) : 0.0;
-
-                double baseAngle = 0.0;
-                if (hubCount > 1)
+                if (visited.Add(child))
                 {
-                    baseAngle = Math.Atan2(hub.Y - centerY, hub.X - centerX);
+                    nodeLevels[child] = currLevel + 1;
+                    treeChildren[curr].Add(child);
+                    bfsQueue.Enqueue(child);
                 }
+            }
 
-                for (int i = 0; i < countInRing; i++)
+            foreach (var parentLike in inEdges[curr].OrderBy(n => GetNodeTypePriority(n.Type)).ThenBy(n => n.Label))
+            {
+                if (visited.Add(parentLike))
                 {
-                    var sat = satellites[satIndex++];
-                    double theta = baseAngle + angleOffset + (2.0 * Math.PI * i) / countInRing;
-                    double r = currentRadius + ((i % 2 == 0) ? -12.0 : 12.0);
-
-                    sat.X = hub.X + Math.Cos(theta) * r;
-                    sat.Y = hub.Y + Math.Sin(theta) * r;
-                    sat.Vx = 0;
-                    sat.Vy = 0;
+                    nodeLevels[parentLike] = currLevel + 1;
+                    treeChildren[curr].Add(parentLike);
+                    bfsQueue.Enqueue(parentLike);
                 }
-
-                currentRadius += radialStep;
-                ringIndex++;
             }
         }
 
-        const double safeWidth = 175.0;
-        const double safeHeight = 85.0;
-        for (int iter = 0; iter < 45; iter++)
+        foreach (var node in Nodes)
+        {
+            if (visited.Add(node))
+            {
+                nodeLevels[node] = 1;
+                treeChildren[roots[0]].Add(node);
+            }
+        }
+
+        var subtreeWidths = new Dictionary<GraphNode, double>();
+        const double nodeSpacing = 160.0;
+        const double levelHeight = 220.0;
+        const double treeSpacing = 260.0;
+        const double gridRowHeight = 90.0;
+
+        double ComputeWidth(GraphNode node)
+        {
+            var children = treeChildren[node];
+            if (children.Count == 0)
+            {
+                subtreeWidths[node] = nodeSpacing;
+                return nodeSpacing;
+            }
+
+            var typeGroups = children.GroupBy(c => c.Type).ToList();
+            double sumW = 0.0;
+
+            foreach (var group in typeGroups)
+            {
+                var groupItems = group.ToList();
+                bool isLeafGroup = groupItems.All(item => treeChildren[item].Count == 0);
+
+                if (isLeafGroup && groupItems.Count >= 3)
+                {
+                    int columns = Math.Min(4, (int)Math.Ceiling(Math.Sqrt(groupItems.Count)));
+                    sumW += columns * nodeSpacing;
+                }
+                else
+                {
+                    foreach (var ch in groupItems)
+                    {
+                        sumW += ComputeWidth(ch);
+                    }
+                }
+            }
+
+            double w = Math.Max(nodeSpacing, sumW);
+            subtreeWidths[node] = w;
+            return w;
+        }
+
+        foreach (var root in roots)
+        {
+            ComputeWidth(root);
+        }
+
+        double totalWidth = 0.0;
+        for (int i = 0; i < roots.Count; i++)
+        {
+            totalWidth += subtreeWidths[roots[i]];
+            if (i < roots.Count - 1) totalWidth += treeSpacing;
+        }
+
+        double currentStartX = 2500.0 - totalWidth / 2.0;
+        double startY = 2200.0;
+
+        void PositionSubtree(GraphNode node, double leftX, double y)
+        {
+            node.Y = y;
+            node.Vx = 0;
+            node.Vy = 0;
+
+            var children = treeChildren[node];
+            if (children.Count == 0)
+            {
+                node.X = leftX + subtreeWidths[node] / 2.0;
+                return;
+            }
+
+            var typeGroups = children.GroupBy(c => c.Type).ToList();
+            double blockX = leftX;
+            double firstChildCenterX = double.NaN;
+            double lastChildCenterX = double.NaN;
+
+            foreach (var group in typeGroups)
+            {
+                var groupItems = group.ToList();
+                bool isLeafGroup = groupItems.All(item => treeChildren[item].Count == 0);
+
+                if (isLeafGroup && groupItems.Count >= 3)
+                {
+                    int columns = Math.Min(4, (int)Math.Ceiling(Math.Sqrt(groupItems.Count)));
+                    double groupWidth = columns * nodeSpacing;
+
+                    for (int idx = 0; idx < groupItems.Count; idx++)
+                    {
+                        var item = groupItems[idx];
+                        int col = idx % columns;
+                        int row = idx / columns;
+
+                        item.X = blockX + (col + 0.5) * nodeSpacing;
+                        item.Y = y + levelHeight + row * gridRowHeight;
+                        item.Vx = 0;
+                        item.Vy = 0;
+
+                        if (double.IsNaN(firstChildCenterX)) firstChildCenterX = item.X;
+                        lastChildCenterX = item.X;
+                    }
+
+                    blockX += groupWidth;
+                }
+                else
+                {
+                    for (int i = 0; i < groupItems.Count; i++)
+                    {
+                        var ch = groupItems[i];
+                        double chW = subtreeWidths[ch];
+                        PositionSubtree(ch, blockX, y + levelHeight);
+
+                        if (double.IsNaN(firstChildCenterX)) firstChildCenterX = ch.X;
+                        lastChildCenterX = ch.X;
+
+                        blockX += chW;
+                    }
+                }
+            }
+
+            if (!double.IsNaN(firstChildCenterX) && !double.IsNaN(lastChildCenterX))
+            {
+                node.X = (firstChildCenterX + lastChildCenterX) / 2.0;
+            }
+            else
+            {
+                node.X = leftX + subtreeWidths[node] / 2.0;
+            }
+        }
+
+        foreach (var root in roots)
+        {
+            double rW = subtreeWidths[root];
+            PositionSubtree(root, currentStartX, startY);
+            currentStartX += rW + treeSpacing;
+        }
+
+        const double safeWidth = 140.0;
+        for (int iter = 0; iter < 30; iter++)
         {
             bool anyOverlap = false;
             for (int i = 0; i < Nodes.Count; i++)
@@ -645,32 +755,25 @@ public partial class GraphViewModel : ObservableObject
                 for (int j = i + 1; j < Nodes.Count; j++)
                 {
                     var b = Nodes[j];
-                    double dx = b.X - a.X;
-                    double dy = b.Y - a.Y;
-                    double overlapX = safeWidth - Math.Abs(dx);
-                    double overlapY = safeHeight - Math.Abs(dy);
+                    if (Math.Abs(a.Y - b.Y) > 80.0) continue;
 
-                    if (overlapX > 0 && overlapY > 0)
+                    double dx = b.X - a.X;
+                    double overlapX = safeWidth - Math.Abs(dx);
+
+                    if (overlapX > 0)
                     {
                         anyOverlap = true;
                         double signX = dx >= 0 ? 1.0 : -1.0;
                         if (Math.Abs(dx) < 0.001) signX = (i % 2 == 0) ? 1.0 : -1.0;
 
-                        double signY = dy >= 0 ? 1.0 : -1.0;
-                        if (Math.Abs(dy) < 0.001) signY = (j % 2 == 0) ? 1.0 : -1.0;
-
-                        double shiftX = (overlapX * 0.4) * signX;
-                        double shiftY = (overlapY * 0.4) * signY;
-
-                        if (!a.IsPinned && !hubs.Contains(a))
+                        double shiftX = (overlapX * 0.5) * signX;
+                        if (!a.IsPinned && !roots.Contains(a))
                         {
                             a.X -= shiftX * 0.5;
-                            a.Y -= shiftY * 0.5;
                         }
-                        if (!b.IsPinned && !hubs.Contains(b))
+                        if (!b.IsPinned && !roots.Contains(b))
                         {
                             b.X += shiftX * 0.5;
-                            b.Y += shiftY * 0.5;
                         }
                     }
                 }
@@ -1092,7 +1195,8 @@ public partial class GraphViewModel : ObservableObject
                         if (ct.IsCancellationRequested) return;
 
                         var newEdges = new List<GraphEdge>();
-                        GraphDataMapper.MapFindingToGraph(findingVm, pivotTarget, _nodeMap, newEdges, _random, node.X, node.Y);
+                        bool mergeShared = _settingsService.Settings.MergeSharedGraphEntities;
+                        GraphDataMapper.MapFindingToGraph(findingVm, pivotTarget, _nodeMap, newEdges, _random, node.X, node.Y, mergeShared);
 
                         foreach (var n in _nodeMap.Values)
                         {

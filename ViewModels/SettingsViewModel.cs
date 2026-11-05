@@ -45,6 +45,9 @@ public partial class SettingsViewModel : ObservableObject
     private bool _enableToasts = true;
 
     [ObservableProperty]
+    private bool _mergeSharedGraphEntities;
+
+    [ObservableProperty]
     private bool _isTesting;
 
     [ObservableProperty]
@@ -115,11 +118,13 @@ public partial class SettingsViewModel : ObservableObject
         CustomAccentColor = string.IsNullOrWhiteSpace(s.CustomAccentColor) ? "#00D2FF" : s.CustomAccentColor;
         SelectedLanguage = string.IsNullOrWhiteSpace(s.Language) ? "ru" : s.Language;
         EnableToasts = s.EnableToasts;
+        MergeSharedGraphEntities = s.MergeSharedGraphEntities;
     }
 
     public bool IsCustomThemeSelected => SelectedThemePreset == "Custom";
 
     partial void OnEnableToastsChanged(bool value) => AutoSave();
+    partial void OnMergeSharedGraphEntitiesChanged(bool value) => AutoSave();
     partial void OnBackendUrlChanged(string value) => AutoSave();
     partial void OnAllowUnencryptedHttp2Changed(bool value) => AutoSave();
     partial void OnTimeoutSecondsChanged(int value) => AutoSave();
@@ -278,7 +283,8 @@ public partial class SettingsViewModel : ObservableObject
             CustomCardColor = CustomCardColor,
             CustomForegroundColor = CustomFgColor,
             CustomAccentColor = CustomAccentColor,
-            EnableToasts = EnableToasts
+            EnableToasts = EnableToasts,
+            MergeSharedGraphEntities = MergeSharedGraphEntities
         };
 
         _settingsService.SaveSettings(settings);
