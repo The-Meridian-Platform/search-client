@@ -61,9 +61,11 @@ public partial class App : Application
             void ShowWelcomeHub()
             {
                 var welcomeWindow = _serviceProvider.GetRequiredService<Views.WelcomeWindow>();
+                bool navigatedToMain = false;
 
                 void OnOpenInvestigation(Models.InvestigationModel inv)
                 {
+                    navigatedToMain = true;
                     welcomeWindow.Close();
                     mainWindow.Show();
                     mainWindow.Activate();
@@ -72,6 +74,7 @@ public partial class App : Application
 
                 void OnNavigate()
                 {
+                    navigatedToMain = true;
                     welcomeWindow.Close();
                     mainWindow.Show();
                     mainWindow.Activate();
@@ -90,11 +93,9 @@ public partial class App : Application
                     welcomeVm.NavigateToSearchRequested -= OnNavigate;
                     welcomeVm.NavigateToGraphRequested -= OnNavigate;
 
-                    if (!mainWindow.IsVisible)
+                    if (!navigatedToMain)
                     {
-                        mainWindow.Show();
-                        mainWindow.Activate();
-                        mainWindow.Focus();
+                        Shutdown();
                     }
                 };
 
