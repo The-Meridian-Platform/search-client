@@ -138,19 +138,6 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Exit to Hub Button -->
-                    <Button Command="{Binding ExitToHubCommand}"
-                            Height="36"
-                            Padding="10,0"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource GraphGhostButtonStyle}"
-                            ToolTip="Выйти в Meridian Hub (выбор и создание расследований)">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:SymbolIcon Symbol="ArrowExit20" FontSize="14" Foreground="#FF5C5C" Margin="0,0,6,0" />
-                            <TextBlock Text="В Hub" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
                     <!-- Target / Active Investigation Display Badge -->
                     <Border Background="{DynamicResource AppBackgroundBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}"
