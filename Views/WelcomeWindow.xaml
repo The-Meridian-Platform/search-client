@@ -102,7 +102,7 @@
                                 <TextBlock Text="RECON 2.0" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Интеллектуальная платформа киберразведки и графового анализа связей"
+                        <TextBlock Text="{DynamicResource Welcome_Subtitle}"
                                    FontSize="12"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                    Margin="0,4,0,0" />
@@ -118,7 +118,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="БЫСТРЫЙ СТАРТ"
+                    <TextBlock Text="{DynamicResource Welcome_QuickStart}"
                                FontSize="11"
                                FontWeight="Bold"
                                Foreground="{DynamicResource SecondaryTextBrush}"
@@ -138,8 +138,8 @@
                                     <ui:SymbolIcon Symbol="Add24" FontSize="20" Foreground="{DynamicResource AccentBrush}" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Новое расследование" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                    <TextBlock Text="Запуск OSINT-поиска по домену, IP или никнейму" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
+                                    <TextBlock Text="{DynamicResource Welcome_NewInvestigation}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
+                                    <TextBlock Text="{DynamicResource Welcome_NewInvestigationDesc}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
                                 </StackPanel>
                                 <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
                             </Grid>
@@ -160,8 +160,8 @@
                                     <ui:SymbolIcon Symbol="FolderOpen24" FontSize="20" Foreground="#61AFEF" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Открыть из файла" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                    <TextBlock Text="Импорт сохраненного расследования (.json)" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
+                                    <TextBlock Text="{DynamicResource Welcome_OpenFromFile}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
+                                    <TextBlock Text="{DynamicResource Welcome_OpenFromFileDesc}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
                                 </StackPanel>
                                 <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
                             </Grid>
@@ -176,7 +176,7 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,12">
-                        <TextBlock Text="НЕДАВНИЕ РАССЛЕДОВАНИЯ"
+                        <TextBlock Text="{DynamicResource Welcome_RecentHeader}"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
@@ -187,7 +187,7 @@
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     Padding="6,2">
-                                <TextBlock Text="Автосохранение включено" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{DynamicResource Welcome_AutosaveBadge}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -201,12 +201,12 @@
                             Visibility="{Binding HasRecentInvestigations, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ui:SymbolIcon Symbol="FolderZip24" FontSize="36" Foreground="{DynamicResource SecondaryTextBrush}" Opacity="0.4" Margin="0,0,0,10" />
-                            <TextBlock Text="Нет недавних расследований"
+                            <TextBlock Text="{DynamicResource Welcome_NoRecentTitle}"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource PrimaryTextBrush}"
                                        HorizontalAlignment="Center" />
-                            <TextBlock Text="Создайте новое расследование или импортируйте файл."
+                            <TextBlock Text="{DynamicResource Welcome_NoRecentDesc}"
                                        FontSize="11"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        HorizontalAlignment="Center"

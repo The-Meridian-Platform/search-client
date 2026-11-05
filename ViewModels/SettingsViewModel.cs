@@ -39,7 +39,7 @@ public partial class SettingsViewModel : ObservableObject
     private string _customAccentColor = "#00D2FF";
 
     [ObservableProperty]
-    private string _selectedLanguage = "ru";
+    private string _selectedLanguage = "en";
 
     [ObservableProperty]
     private bool _enableToasts = true;
@@ -116,7 +116,7 @@ public partial class SettingsViewModel : ObservableObject
         CustomCardColor = string.IsNullOrWhiteSpace(s.CustomCardColor) ? "#161B22" : s.CustomCardColor;
         CustomFgColor = string.IsNullOrWhiteSpace(s.CustomForegroundColor) ? "#F0F6FC" : s.CustomForegroundColor;
         CustomAccentColor = string.IsNullOrWhiteSpace(s.CustomAccentColor) ? "#00D2FF" : s.CustomAccentColor;
-        SelectedLanguage = string.IsNullOrWhiteSpace(s.Language) ? "ru" : s.Language;
+        SelectedLanguage = string.IsNullOrWhiteSpace(s.Language) ? "en" : s.Language;
         EnableToasts = s.EnableToasts;
         MergeSharedGraphEntities = s.MergeSharedGraphEntities;
     }

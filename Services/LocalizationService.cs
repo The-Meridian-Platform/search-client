@@ -14,7 +14,7 @@ public class LocalizationService : ILocalizationService
 {
     public static LocalizationService Instance { get; } = new();
 
-    private string _currentLanguage = "ru";
+    private string _currentLanguage = "en";
     public string CurrentLanguage => _currentLanguage;
 
     public event Action? LanguageChanged;
@@ -172,7 +172,19 @@ public class LocalizationService : ILocalizationService
         ["Settings_Graph_Label"] = "ПАРАМЕТРЫ СВЯЗЕЙ ГРАФА:",
         ["Settings_Graph_MergeShared_Title"] = "Объединять общие сущности в графе",
         ["Settings_Graph_MergeShared_Subtitle"] = "Связывать одинаковые узлы (общие IP, юзернеймы, почты) в единый узел-мост между разными ветками поиска",
-        ["Settings_DiagHeader"] = "ДИАГНОСТИКА СОЕДИНЕНИЯ:"
+        ["Settings_DiagHeader"] = "ДИАГНОСТИКА СОЕДИНЕНИЯ:",
+
+        // Welcome / Hub View
+        ["Welcome_Subtitle"] = "Интеллектуальная платформа киберразведки и графового анализа связей",
+        ["Welcome_QuickStart"] = "БЫСТРЫЙ СТАРТ",
+        ["Welcome_NewInvestigation"] = "Новое расследование",
+        ["Welcome_NewInvestigationDesc"] = "Запуск OSINT-поиска по домену, IP или никнейму",
+        ["Welcome_OpenFromFile"] = "Открыть из файла",
+        ["Welcome_OpenFromFileDesc"] = "Импорт сохраненного расследования (.json)",
+        ["Welcome_RecentHeader"] = "НЕДАВНИЕ РАССЛЕДОВАНИЯ",
+        ["Welcome_AutosaveBadge"] = "Автосохранение включено",
+        ["Welcome_NoRecentTitle"] = "Нет недавних расследований",
+        ["Welcome_NoRecentDesc"] = "Создайте новое расследование или импортируйте файл."
     };
 
     private static readonly Dictionary<string, string> EnDictionary = new()
@@ -328,7 +340,19 @@ public class LocalizationService : ILocalizationService
         ["Settings_Graph_Label"] = "RELATION GRAPH SETTINGS:",
         ["Settings_Graph_MergeShared_Title"] = "Merge shared graph entities",
         ["Settings_Graph_MergeShared_Subtitle"] = "Link identical entities (shared IPs, usernames, emails) into a single bridge node between different search targets",
-        ["Settings_DiagHeader"] = "CONNECTION DIAGNOSTICS:"
+        ["Settings_DiagHeader"] = "CONNECTION DIAGNOSTICS:",
+
+        // Welcome / Hub View
+        ["Welcome_Subtitle"] = "Advanced cyber intelligence platform and graph relation analysis",
+        ["Welcome_QuickStart"] = "QUICK START",
+        ["Welcome_NewInvestigation"] = "New Investigation",
+        ["Welcome_NewInvestigationDesc"] = "Start OSINT reconnaissance by domain, IP or username",
+        ["Welcome_OpenFromFile"] = "Open from File",
+        ["Welcome_OpenFromFileDesc"] = "Import saved investigation (.json)",
+        ["Welcome_RecentHeader"] = "RECENT INVESTIGATIONS",
+        ["Welcome_AutosaveBadge"] = "Autosave enabled",
+        ["Welcome_NoRecentTitle"] = "No recent investigations",
+        ["Welcome_NoRecentDesc"] = "Create a new investigation or import a file."
     };
 
     public void SetLanguage(string languageCode)
