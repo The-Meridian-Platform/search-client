@@ -118,7 +118,7 @@ public class LocalizationService : ILocalizationService
         ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand запущен для {0} ключевых находок (1 уровень глубины).",
         ["Graph_Btn_SmartLayout_ToolTip"] = "Организовать и зафиксировать (умная раскладка + стоп-физика)",
         ["Graph_Toast_SmartLayoutTitle"] = "Раскладка зафиксирована",
-        ["Graph_Toast_SmartLayoutSuccess"] = "Иерархическая структура выстроена (Maltego Tree). Физика остановлена.",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Иерархическая структура выстроена (Meridian Smart Tree). Физика остановлена.",
 
         // History View
         ["History_Title"] = "История поисковых сессий",
@@ -272,7 +272,7 @@ public class LocalizationService : ILocalizationService
         ["Graph_Toast_AutoExpandStarted"] = "Smart Auto-Expand launched for {0} priority findings (Depth 1).",
         ["Graph_Btn_SmartLayout_ToolTip"] = "Organize and Lock (smart layout + stop physics)",
         ["Graph_Toast_SmartLayoutTitle"] = "Layout Locked",
-        ["Graph_Toast_SmartLayoutSuccess"] = "Hierarchical structure arranged (Maltego Tree). Physics stopped.",
+        ["Graph_Toast_SmartLayoutSuccess"] = "Hierarchical structure arranged (Meridian Smart Tree). Physics stopped.",
 
         // History View
         ["History_Title"] = "Reconnaissance Session History",
