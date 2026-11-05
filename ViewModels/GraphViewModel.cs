@@ -50,6 +50,8 @@ public partial class GraphViewModel : ObservableObject
     private readonly DispatcherTimer _physicsTimer;
     private CancellationTokenSource? _pivotCts;
 
+    public event Action? ExitToHubRequested;
+
     public ObservableCollection<GraphNode> Nodes { get; } = new();
     public ObservableCollection<GraphEdge> Edges { get; } = new();
     public ObservableCollection<InvestigationModel> AvailableInvestigations { get; } = new();
@@ -507,6 +509,12 @@ public partial class GraphViewModel : ObservableObject
             node.IsHighlighted = node.Label.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                                  node.SubLabel.Contains(q, StringComparison.OrdinalIgnoreCase);
         }
+    }
+
+    [RelayCommand]
+    public void ExitToHub()
+    {
+        ExitToHubRequested?.Invoke();
     }
 
     [RelayCommand]

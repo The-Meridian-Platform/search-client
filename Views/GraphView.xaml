@@ -138,106 +138,34 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Investigations Dropdown with Placeholder and Delete Button per Item -->
-                    <Grid Width="175" Height="36" Margin="0,0,4,0">
-                        <ComboBox ItemsSource="{Binding AvailableInvestigations}"
-                                  SelectedItem="{Binding SelectedInvestigation, Mode=TwoWay}"
-                                  Width="175"
-                                  Height="36"
-                                  ToolTip="Сохраненные проекты расследований"
-                                  VerticalContentAlignment="Center"
-                                  Background="{DynamicResource AppBackgroundBrush}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}"
-                                  BorderBrush="{DynamicResource CardBorderBrush}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Height="26">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding FormattedTitle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                                   Margin="0,0,8,0" />
-                                        <Button Grid.Column="1"
-                                                Command="{Binding DataContext.DeleteInvestigationCommand, Source={x:Reference rootGraphControl}}"
-                                                CommandParameter="{Binding}"
-                                                Width="22" Height="22"
-                                                Padding="0"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Cursor="Hand"
-                                                ToolTip="Удалить это расследование">
-                                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        </Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <!-- Placeholder Text -->
-                        <TextBlock Text="Проекты расследований..."
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="12,0,30,0"
-                                   IsHitTestVisible="False"
-                                   Visibility="{Binding SelectedInvestigation, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
-                    </Grid>
-
-                    <!-- Delete Selected Investigation Button -->
-                    <Button Command="{Binding DeleteInvestigationCommand}"
-                            Visibility="{Binding SelectedInvestigation, Converter={StaticResource BoolToVis}}"
+                    <!-- Exit to Hub Button -->
+                    <Button Command="{Binding ExitToHubCommand}"
                             Height="36"
-                            Width="36"
-                            Padding="0"
+                            Padding="10,0"
                             Margin="0,0,8,0"
                             Style="{StaticResource GraphGhostButtonStyle}"
-                            ToolTip="Удалить выбранное расследование">
-                        <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#FF5555" />
+                            ToolTip="Выйти в Meridian Hub (выбор и создание расследований)">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="ArrowExit20" FontSize="14" Foreground="#FF5C5C" Margin="0,0,6,0" />
+                            <TextBlock Text="В Hub" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
                     </Button>
 
-                    <!-- Session Selector Dropdown with Placeholder -->
-                    <Grid Width="150" Height="36" Margin="0,0,8,0">
-                        <ComboBox ItemsSource="{Binding AvailableSessions}"
-                                  SelectedItem="{Binding SelectedSession, Mode=TwoWay}"
-                                  DisplayMemberPath="FormattedTitle"
-                                  Width="150"
-                                  Height="36"
-                                  ToolTip="Одиночные сессии из истории"
-                                  VerticalContentAlignment="Center"
-                                  Background="{DynamicResource AppBackgroundBrush}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}"
-                                  BorderBrush="{DynamicResource CardBorderBrush}" />
-
-                        <!-- Placeholder Text -->
-                        <TextBlock Text="Сессии из истории..."
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="12,0,30,0"
-                                   IsHitTestVisible="False"
-                                   Visibility="{Binding SelectedSession, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}" />
-                    </Grid>
-
-                    <!-- Target Display Badge -->
+                    <!-- Target / Active Investigation Display Badge -->
                     <Border Background="{DynamicResource AppBackgroundBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             Height="36"
-                            Padding="10,0"
+                            Padding="12,0"
                             VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:SymbolIcon Symbol="Target24" FontSize="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,6,0" />
+                            <ui:SymbolIcon Symbol="BranchFork24" FontSize="14" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" />
                             <TextBlock Text="{Binding TargetDisplay}"
                                        FontFamily="JetBrains Mono, Cascadia Code, Consolas"
                                        FontSize="12"
                                        FontWeight="Bold"
-                                       MaxWidth="120"
+                                       MaxWidth="180"
                                        TextTrimming="CharacterEllipsis"
                                        Foreground="{DynamicResource PrimaryTextBrush}"
                                        VerticalAlignment="Center" />

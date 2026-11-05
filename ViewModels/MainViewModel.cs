@@ -51,6 +51,8 @@ public partial class MainViewModel : ObservableObject
             NavigateTo("Graph");
         };
 
+        Graph.ExitToHubRequested += () => ExitToHubRequested?.Invoke();
+
         History.SessionDetailsLoaded += session =>
         {
             Search.LoadExistingSession(session);
