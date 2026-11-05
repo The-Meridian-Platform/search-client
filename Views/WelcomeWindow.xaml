@@ -13,8 +13,8 @@
         WindowCornerPreference="Round"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
-        Height="540" Width="1020"
-        MinHeight="480" MinWidth="920"
+        Height="540" Width="920"
+        MinHeight="480" MinWidth="820"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -27,6 +27,7 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="18,16" />
             <Setter Property="Height" Value="82" />
+            <Setter Property="Width" Value="380" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -43,6 +44,7 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="14,10" />
             <Setter Property="Height" Value="64" />
+            <Setter Property="Width" Value="380" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -111,9 +113,9 @@
 
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="380" />
                     <ColumnDefinition Width="28" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="380" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
