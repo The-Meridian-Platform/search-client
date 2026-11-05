@@ -14,6 +14,8 @@ public partial class MainViewModel : ObservableObject
     public SettingsViewModel Settings { get; }
     public IHealthCheckService Health { get; }
 
+    public event Action? ExitToHubRequested;
+
     [ObservableProperty]
     private ObservableObject _currentViewModel;
 
@@ -56,6 +58,12 @@ public partial class MainViewModel : ObservableObject
             _ = Graph.LoadSessionByIdAsync(session.EffectiveId, session.EffectiveTarget);
             NavigateTo("Search");
         };
+    }
+
+    [RelayCommand]
+    public void ExitToHub()
+    {
+        ExitToHubRequested?.Invoke();
     }
 
     [RelayCommand]

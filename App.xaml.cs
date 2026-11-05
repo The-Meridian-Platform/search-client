@@ -55,9 +55,11 @@ public partial class App : Application
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             MainWindow = mainWindow;
 
-            if (settingsService.Settings.ShowWelcomeScreenOnStartup)
+            var mainVm = _serviceProvider.GetRequiredService<MainViewModel>();
+            var welcomeVm = _serviceProvider.GetRequiredService<WelcomeViewModel>();
+
+            void ShowWelcomeHub()
             {
-                var welcomeVm = _serviceProvider.GetRequiredService<WelcomeViewModel>();
                 var welcomeWindow = _serviceProvider.GetRequiredService<Views.WelcomeWindow>();
 
                 void OnOpenInvestigation(Models.InvestigationModel inv)
@@ -97,6 +99,17 @@ public partial class App : Application
                 welcomeWindow.Show();
                 welcomeWindow.Activate();
                 welcomeWindow.Focus();
+            }
+
+            mainVm.ExitToHubRequested += () =>
+            {
+                mainWindow.Hide();
+                ShowWelcomeHub();
+            };
+
+            if (settingsService.Settings.ShowWelcomeScreenOnStartup)
+            {
+                ShowWelcomeHub();
             }
             else
             {
