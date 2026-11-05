@@ -19,6 +19,23 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="18,16" />
             <Setter Property="Height" Value="82" />
+            <Setter Property="Width" Value="380" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource SubtleAccentBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WelcomeRecentCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Height" Value="64" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -193,8 +210,8 @@
                     <ItemsControl ItemsSource="{Binding RecentInvestigations}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource WelcomeActionCardStyle}" Margin="0,0,0,8" Padding="14">
-                                    <Grid>
+                                <Border Style="{StaticResource WelcomeRecentCardStyle}" Margin="0,0,0,8">
+                                    <Grid VerticalAlignment="Center">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
