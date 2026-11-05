@@ -46,6 +46,15 @@ public class GraphDataMapper
         if (finding.IsIpShodan && finding.IpShodanData != null && !string.IsNullOrWhiteSpace(finding.IpShodanData.Ip))
             return finding.IpShodanData.Ip.Trim();
 
+        if (finding.IsDomainDmarc && finding.DomainDmarcData != null && !string.IsNullOrWhiteSpace(finding.DomainDmarcData.Domain))
+            return finding.DomainDmarcData.Domain.Trim();
+
+        if (finding.IsDomainSecurityTxt && finding.DomainSecurityTxtData != null && !string.IsNullOrWhiteSpace(finding.DomainSecurityTxtData.Domain))
+            return finding.DomainSecurityTxtData.Domain.Trim();
+
+        if (finding.IsUsernameSshKeys && finding.UsernameSshKeysData != null && !string.IsNullOrWhiteSpace(finding.UsernameSshKeysData.Username))
+            return finding.UsernameSshKeysData.Username.Trim();
+
         if (finding.IsWhois && finding.WhoisData != null && !string.IsNullOrWhiteSpace(finding.WhoisData.DomainName))
             return finding.WhoisData.DomainName.Trim();
 
@@ -784,6 +793,164 @@ public class GraphDataMapper
                     vulnNode.IsThreat = true;
                     vulnNode.ThreatDescription = $"Критическая уязвимость {cve} на IP {ip}";
                     AddEdgeIfMissing(ipNode, vulnNode, "Уязвимость");
+                }
+            }
+        }
+
+        if (finding.IsDomainDmarc && finding.DomainDmarcData != null)
+        {
+            var dmarc = finding.DomainDmarcData;
+            string domain = !string.IsNullOrWhiteSpace(dmarc.Domain) ? dmarc.Domain.Trim() : effectiveTarget;
+            string domainNodeId = $"target:{NormalizeHost(domain)}";
+            if (!nodes.TryGetValue(domainNodeId, out var domainNode))
+            {
+                domainNode = targetNode;
+            }
+
+            var props = new Dictionary<string, string>
+            {
+                { "Домен", domain },
+                { "DMARC Политика", dmarc.Policy },
+                { "DMARC Запись", dmarc.RawRecord },
+                { "Статус безопасности", dmarc.Severity },
+                { "Уязвим к спуфингу", dmarc.IsSpoofable ? "Да" : "Нет" }
+            };
+            if (!string.IsNullOrWhiteSpace(dmarc.ReportEmail))
+            {
+                props["Email отчетов (RUA)"] = dmarc.ReportEmail;
+            }
+            if (!string.IsNullOrWhiteSpace(dmarc.Summary))
+            {
+                props["Сводка DMARC"] = dmarc.Summary;
+            }
+
+            domainNode.MergeProperties(props);
+
+            if (dmarc.IsSpoofable)
+            {
+                domainNode.IsThreat = true;
+                domainNode.ThreatDescription = $"Риск спуфинга почты: DMARC политика '{dmarc.Policy}' не защищает домен.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(dmarc.ReportEmail))
+            {
+                string email = dmarc.ReportEmail.Trim();
+                string emailNodeId = $"email:{email.ToLowerInvariant()}";
+                var emailProps = new Dictionary<string, string>
+                {
+                    { "Email", email },
+                    { "Назначение", "DMARC Reports (rua)" },
+                    { "Домен", domain }
+                };
+                var emailNode = GetOrCreateNode(emailNodeId, email, "DMARC Reports", GraphNodeType.EmailVerified, domainNode, finding.RawJson, emailProps);
+                AddEdgeIfMissing(domainNode, emailNode, "DMARC Reports");
+            }
+        }
+
+        if (finding.IsDomainSecurityTxt && finding.DomainSecurityTxtData != null)
+        {
+            var sec = finding.DomainSecurityTxtData;
+            string domain = !string.IsNullOrWhiteSpace(sec.Domain) ? sec.Domain.Trim() : effectiveTarget;
+            string domainNodeId = $"target:{NormalizeHost(domain)}";
+            if (!nodes.TryGetValue(domainNodeId, out var domainNode))
+            {
+                domainNode = targetNode;
+            }
+
+            var props = new Dictionary<string, string>
+            {
+                { "Домен", domain },
+                { "security.txt URL", sec.Url }
+            };
+            if (sec.HasExpires) props["Срок действия"] = sec.Expires;
+            if (sec.HasBugBounty) props["Bug Bounty"] = sec.PolicyUrl;
+            if (sec.HasAcknowledgments) props["Зал славы"] = sec.AcknowledgmentsUrl;
+            if (sec.HasHiring) props["Вакансии ИБ"] = sec.HiringUrl;
+
+            domainNode.MergeProperties(props);
+
+            foreach (var email in sec.SecurityEmails)
+            {
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    string cleanEmail = email.Trim();
+                    string emailNodeId = $"email:{cleanEmail.ToLowerInvariant()}";
+                    var emailProps = new Dictionary<string, string>
+                    {
+                        { "Email", cleanEmail },
+                        { "Роль", "Security Contact (RFC 9116)" },
+                        { "Домен", domain }
+                    };
+                    var emailNode = GetOrCreateNode(emailNodeId, cleanEmail, "Security Contact", GraphNodeType.Contact, domainNode, finding.RawJson, emailProps);
+                    AddEdgeIfMissing(domainNode, emailNode, "Security Contact");
+                }
+            }
+
+            if (sec.HasBugBounty)
+            {
+                string policyUrl = sec.PolicyUrl.Trim();
+                string urlNodeId = $"url:{policyUrl.ToLowerInvariant()}";
+                var policyProps = new Dictionary<string, string>
+                {
+                    { "URL", policyUrl },
+                    { "Тип", "Bug Bounty Policy" },
+                    { "Домен", domain }
+                };
+                var policyNode = GetOrCreateNode(urlNodeId, "Bug Bounty Policy", policyUrl, GraphNodeType.Other, domainNode, finding.RawJson, policyProps);
+                AddEdgeIfMissing(domainNode, policyNode, "Security Policy");
+            }
+        }
+
+        if (finding.IsUsernameSshKeys && finding.UsernameSshKeysData != null)
+        {
+            var ssh = finding.UsernameSshKeysData;
+            string username = !string.IsNullOrWhiteSpace(ssh.Username) ? ssh.Username.Trim() : effectiveTarget;
+            string normUser = NormalizeUsername(username);
+            string userNodeId = $"user:{normUser}";
+
+            if (!nodes.TryGetValue(userNodeId, out var userNode) && !nodes.TryGetValue(targetId, out userNode))
+            {
+                userNode = targetNode;
+            }
+
+            var props = new Dictionary<string, string>
+            {
+                { "Юзернейм", username },
+                { "SSH ключей", ssh.KeyCount.ToString() }
+            };
+            userNode.MergeProperties(props);
+
+            foreach (var email in ssh.DiscoveredEmails)
+            {
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    string cleanEmail = email.Trim();
+                    string emailNodeId = $"email:{cleanEmail.ToLowerInvariant()}";
+                    var emailProps = new Dictionary<string, string>
+                    {
+                        { "Email", cleanEmail },
+                        { "Источник", "GitHub SSH Key Comment" },
+                        { "Юзернейм", username }
+                    };
+                    var emailNode = GetOrCreateNode(emailNodeId, cleanEmail, "SSH Key Email", GraphNodeType.EmailVerified, userNode, finding.RawJson, emailProps);
+                    AddEdgeIfMissing(userNode, emailNode, "SSH Key Email");
+                }
+            }
+
+            foreach (var host in ssh.DiscoveredHostnames)
+            {
+                if (!string.IsNullOrWhiteSpace(host))
+                {
+                    string cleanHost = host.Trim();
+                    string hostNodeId = $"host:{cleanHost.ToLowerInvariant()}";
+                    var hostProps = new Dictionary<string, string>
+                    {
+                        { "Хостнейм", cleanHost },
+                        { "Источник", "Workstation Device" },
+                        { "Юзернейм", username }
+                    };
+                    var hostNode = GetOrCreateNode(hostNodeId, cleanHost, "Workstation Host", GraphNodeType.Subdomain, userNode, finding.RawJson, hostProps);
+                    AddEdgeIfMissing(userNode, hostNode, "Workstation Host");
                 }
             }
         }

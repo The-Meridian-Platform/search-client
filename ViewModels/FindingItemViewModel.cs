@@ -73,6 +73,15 @@ public partial class FindingItemViewModel : ObservableObject
     private bool _isUsernamePresence;
 
     [ObservableProperty]
+    private bool _isDomainDmarc;
+
+    [ObservableProperty]
+    private bool _isDomainSecurityTxt;
+
+    [ObservableProperty]
+    private bool _isUsernameSshKeys;
+
+    [ObservableProperty]
     private ParsedDnsData? _dnsData;
 
     [ObservableProperty]
@@ -115,6 +124,15 @@ public partial class FindingItemViewModel : ObservableObject
     private ParsedUsernamePresenceData? _usernamePresenceData;
 
     [ObservableProperty]
+    private ParsedDomainDmarcData? _domainDmarcData;
+
+    [ObservableProperty]
+    private ParsedDomainSecurityTxtData? _domainSecurityTxtData;
+
+    [ObservableProperty]
+    private ParsedUsernameSshKeysData? _usernameSshKeysData;
+
+    [ObservableProperty]
     private bool _isDismissing;
 
     public static event Action<string>? PivotSearchRequested;
@@ -127,6 +145,8 @@ public partial class FindingItemViewModel : ObservableObject
     {
         get
         {
+            if (IsDomainDmarc || IsDomainSecurityTxt) return "Tech";
+            if (IsUsernameSshKeys) return "Username";
             if (IsEmailFinding) return "Email";
             if (IsUsernameFinding) return "Username";
             if (IsIpFinding) return "IP";
@@ -152,6 +172,9 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsUsernameGithub) return "GITHUB";
             if (IsUsernameTelegram) return "TELEGRAM";
             if (IsUsernamePresence) return !string.IsNullOrWhiteSpace(UsernamePresenceData?.Platform) ? UsernamePresenceData.Platform.ToUpperInvariant() : "PRESENCE";
+            if (IsDomainDmarc) return DomainDmarcData?.PolicyBadgeText ?? "DMARC";
+            if (IsDomainSecurityTxt) return "SECURITY.TXT";
+            if (IsUsernameSshKeys) return "SSH KEYS";
             if (IsDns && !string.IsNullOrWhiteSpace(DnsData?.RecordType) &&
                 !DnsData.RecordType.Equals("dns_record", StringComparison.OrdinalIgnoreCase))
             {
@@ -189,6 +212,9 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsUsernameGithub) return "#8957E5";
             if (IsUsernameTelegram) return "#2AABEE";
             if (IsUsernamePresence) return UsernamePresenceData?.PlatformBadgeForeground ?? "#00D2FF";
+            if (IsDomainDmarc) return DomainDmarcData?.SeverityColor ?? "#00E599";
+            if (IsDomainSecurityTxt) return "#00D2FF";
+            if (IsUsernameSshKeys) return "#00E599";
             if (IsDns && DnsData != null) return DnsData.RecordTypeColor;
             if (IsWhois) return "#C084FC";
             if (IsSubdomain) return "#00F0FF";
@@ -211,6 +237,9 @@ public partial class FindingItemViewModel : ObservableObject
             if (IsUsernameGithub) return "#258957E5";
             if (IsUsernameTelegram) return "#252AABEE";
             if (IsUsernamePresence) return UsernamePresenceData?.PlatformBadgeBackground ?? "#2000D2FF";
+            if (IsDomainDmarc) return DomainDmarcData?.SeverityBackground ?? "#2000E599";
+            if (IsDomainSecurityTxt) return "#2000D2FF";
+            if (IsUsernameSshKeys) return "#2000E599";
             if (IsDns && DnsData != null) return DnsData.RecordTypeBackground;
             if (IsWhois) return "#25A855F7";
             if (IsSubdomain) return "#2000F0FF";
@@ -269,6 +298,12 @@ public partial class FindingItemViewModel : ObservableObject
                                providerUpper.Contains("CRT");
 
         // 5. Recognize HTTP Tech findings
+        bool isDmarcType = typeUpper.Contains("DMARC") || providerUpper.Contains("DMARC");
+        bool isSecurityTxtType = typeUpper.Contains("SECURITY-TXT") || typeUpper.Contains("SECURITY_TXT") ||
+                                 providerUpper.Contains("SECURITY-TXT") || providerUpper.Contains("SECURITY_TXT");
+        bool isSshKeysType = typeUpper.Contains("SSH-KEYS") || typeUpper.Contains("SSH_KEYS") || typeUpper.Contains("SSH") ||
+                             providerUpper.Contains("SSH-KEYS") || providerUpper.Contains("SSH_KEYS");
+
         bool isHttpTechType = typeUpper.Contains("HTTP") ||
                               typeUpper.Contains("TECH") ||
                               providerUpper.Contains("HTTP") ||
@@ -338,6 +373,21 @@ public partial class FindingItemViewModel : ObservableObject
         {
             IsSubdomain = true;
             SubdomainData = ExtractSubdomainData(model);
+        }
+        else if (isDmarcType)
+        {
+            IsDomainDmarc = true;
+            DomainDmarcData = ExtractDomainDmarcData(model);
+        }
+        else if (isSecurityTxtType)
+        {
+            IsDomainSecurityTxt = true;
+            DomainSecurityTxtData = ExtractDomainSecurityTxtData(model);
+        }
+        else if (isSshKeysType)
+        {
+            IsUsernameSshKeys = true;
+            UsernameSshKeysData = ExtractUsernameSshKeysData(model);
         }
         else if (isHttpTechType)
         {
@@ -1243,6 +1293,100 @@ public partial class FindingItemViewModel : ObservableObject
                 if (TryGetStringList(root, "Vulnerabilities", out var vulns) || TryGetStringList(root, "vulns", out vulns))
                 {
                     data.Vulnerabilities = vulns;
+                }
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedDomainDmarcData ExtractDomainDmarcData(FindingModel model)
+    {
+        var data = new ParsedDomainDmarcData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Domain", out var domain) || TryGetString(root, "domain", out domain)) data.Domain = domain;
+                if (TryGetBool(root, "HasDmarc", out var hasDmarc) || TryGetBool(root, "hasDmarc", out hasDmarc)) data.HasDmarc = hasDmarc;
+                if (TryGetString(root, "RawRecord", out var raw) || TryGetString(root, "rawRecord", out raw)) data.RawRecord = raw;
+                if (TryGetString(root, "Policy", out var policy) || TryGetString(root, "policy", out policy)) data.Policy = policy;
+                if (TryGetBool(root, "IsSpoofable", out var isSpoofable) || TryGetBool(root, "isSpoofable", out isSpoofable)) data.IsSpoofable = isSpoofable;
+                if (TryGetString(root, "Severity", out var severity) || TryGetString(root, "severity", out severity)) data.Severity = severity;
+                if (TryGetString(root, "ReportEmail", out var reportEmail) || TryGetString(root, "reportEmail", out reportEmail)) data.ReportEmail = reportEmail;
+                if (TryGetString(root, "Summary", out var summary) || TryGetString(root, "summary", out summary)) data.Summary = summary;
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedDomainSecurityTxtData ExtractDomainSecurityTxtData(FindingModel model)
+    {
+        var data = new ParsedDomainSecurityTxtData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Domain", out var domain) || TryGetString(root, "domain", out domain)) data.Domain = domain;
+                if (TryGetString(root, "Url", out var url) || TryGetString(root, "url", out url)) data.Url = url;
+                if (TryGetStringList(root, "Contacts", out var contacts)) data.Contacts = contacts;
+                if (TryGetStringList(root, "SecurityEmails", out var emails)) data.SecurityEmails = emails;
+                if (TryGetString(root, "PolicyUrl", out var policy) || TryGetString(root, "policyUrl", out policy)) data.PolicyUrl = policy;
+                if (TryGetString(root, "AcknowledgmentsUrl", out var ack) || TryGetString(root, "acknowledgmentsUrl", out ack)) data.AcknowledgmentsUrl = ack;
+                if (TryGetString(root, "HiringUrl", out var hiring) || TryGetString(root, "hiringUrl", out hiring)) data.HiringUrl = hiring;
+                if (TryGetString(root, "Expires", out var expires) || TryGetString(root, "expires", out expires)) data.Expires = expires;
+            }
+        }
+        catch { }
+
+        return data;
+    }
+
+    private ParsedUsernameSshKeysData ExtractUsernameSshKeysData(FindingModel model)
+    {
+        var data = new ParsedUsernameSshKeysData();
+        if (string.IsNullOrWhiteSpace(model.DataJson)) return data;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(model.DataJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetString(root, "Username", out var username) || TryGetString(root, "username", out username)) data.Username = username;
+                if (TryGetStringList(root, "DiscoveredEmails", out var emails)) data.DiscoveredEmails = emails;
+                if (TryGetStringList(root, "DiscoveredHostnames", out var hostnames)) data.DiscoveredHostnames = hostnames;
+
+                foreach (var prop in root.EnumerateObject())
+                {
+                    if (string.Equals(prop.Name, "Keys", StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == JsonValueKind.Array)
+                    {
+                        var keys = new List<ParsedSshKeyItem>();
+                        foreach (var keyElem in prop.Value.EnumerateArray())
+                        {
+                            if (keyElem.ValueKind == JsonValueKind.Object)
+                            {
+                                var item = new ParsedSshKeyItem();
+                                if (TryGetString(keyElem, "KeyType", out var kt) || TryGetString(keyElem, "keyType", out kt)) item.KeyType = kt;
+                                if (TryGetString(keyElem, "FingerprintSha256", out var fp) || TryGetString(keyElem, "fingerprintSha256", out fp)) item.FingerprintSha256 = fp;
+                                if (TryGetString(keyElem, "Comment", out var c) || TryGetString(keyElem, "comment", out c)) item.Comment = c;
+                                keys.Add(item);
+                            }
+                        }
+                        data.Keys = keys;
+                        break;
+                    }
                 }
             }
         }

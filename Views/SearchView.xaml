@@ -2391,6 +2391,507 @@
                                         </Grid>
                                     </StackPanel>
 
+                                                                        <!-- DOMAIN: DMARC EMAIL SPOOFING PROTECTION CARD -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsDomainDmarc, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 0: Title, Status Badge, Domain -->
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0"
+                                                        Width="40" Height="40"
+                                                        CornerRadius="10"
+                                                        Background="{Binding DomainDmarcData.SeverityBackground}"
+                                                        BorderBrush="{Binding DomainDmarcData.SeverityColor}"
+                                                        BorderThickness="1"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="ShieldCheckmark24"
+                                                                   FontSize="20"
+                                                                   Foreground="{Binding DomainDmarcData.SeverityColor}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="DMARC Email Spoofing Protection"
+                                                                   FontSize="14"
+                                                                   FontWeight="Black"
+                                                                   Foreground="#F0F6FC"
+                                                                   VerticalAlignment="Center" />
+                                                        <Border Background="{Binding DomainDmarcData.SeverityBackground}"
+                                                                BorderBrush="{Binding DomainDmarcData.SeverityColor}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="8,2"
+                                                                Margin="10,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding DomainDmarcData.PolicyBadgeText}"
+                                                                       FontFamily="JetBrains Mono, Segoe UI"
+                                                                       FontSize="10"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{Binding DomainDmarcData.SeverityColor}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding DomainDmarcData.Domain}"
+                                                               FontFamily="JetBrains Mono"
+                                                               FontSize="12"
+                                                               Foreground="#00D2FF"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+
+                                                <!-- Spoofing Risk Chip -->
+                                                <Border Grid.Column="2"
+                                                        Background="#25FF3366"
+                                                        BorderBrush="#FF3366"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="8,4"
+                                                        VerticalAlignment="Center"
+                                                        Visibility="{Binding DomainDmarcData.IsSpoofable, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Warning24" FontSize="13" Foreground="#FF3366" Margin="0,0,6,0" />
+                                                        <TextBlock Text="SPOOFING RISK" FontSize="10" FontWeight="Bold" FontFamily="JetBrains Mono" Foreground="#FF3366" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Row 1: Summary -->
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding DomainDmarcData.Summary}"
+                                                       FontSize="12"
+                                                       Foreground="#94A3B8"
+                                                       Margin="0,8,0,0"
+                                                       TextWrapping="Wrap" />
+
+                                            <!-- Row 2: Report Email Chip with Pivot button -->
+                                            <Border Grid.Row="2"
+                                                    Background="{DynamicResource AppBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="10,6"
+                                                    Margin="0,8,0,0"
+                                                    Visibility="{Binding DomainDmarcData.HasReportEmail, Converter={StaticResource BoolToVis}}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ui:SymbolIcon Grid.Column="0" Symbol="Mail24" FontSize="14" Foreground="#00E599" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="Reports (rua): " FontSize="11" Foreground="#64748B" FontWeight="Bold" />
+                                                        <TextBlock Text="{Binding DomainDmarcData.ReportEmail}"
+                                                                   FontFamily="JetBrains Mono"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#F8FAFC" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2"
+                                                            Command="{Binding PivotSearchCommand}"
+                                                            CommandParameter="{Binding DomainDmarcData.ReportEmail}"
+                                                            Style="{StaticResource CyberGhostButtonStyle}"
+                                                            Height="26"
+                                                            Padding="8,0"
+                                                            ToolTip="Pivot поиск по адресу отчетов DMARC">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <ui:SymbolIcon Symbol="BranchFork24" FontSize="11" Foreground="#00D2FF" Margin="0,0,4,0" />
+                                                            <TextBlock Text="Pivot" FontSize="10" FontWeight="Bold" Foreground="#00D2FF" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- DOMAIN: SECURITY.TXT RFC 9116 POLICY CARD -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsDomainSecurityTxt, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 0: Title, Domain, Expires -->
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0"
+                                                        Width="40" Height="40"
+                                                        CornerRadius="10"
+                                                        Background="#2000D2FF"
+                                                        BorderBrush="#00D2FF"
+                                                        BorderThickness="1"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Shield24"
+                                                                   FontSize="20"
+                                                                   Foreground="#00D2FF"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="RFC 9116 Security Policy"
+                                                                   FontSize="14"
+                                                                   FontWeight="Black"
+                                                                   Foreground="#F0F6FC"
+                                                                   VerticalAlignment="Center" />
+                                                        <Border Background="#2000D2FF"
+                                                                BorderBrush="#4D00D2FF"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="8,2"
+                                                                Margin="10,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="SECURITY.TXT"
+                                                                       FontFamily="JetBrains Mono"
+                                                                       FontSize="10"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#00D2FF" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding DomainSecurityTxtData.Domain}"
+                                                               FontFamily="JetBrains Mono"
+                                                               FontSize="12"
+                                                               Foreground="#00E599"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+
+                                                <Border Grid.Column="2"
+                                                        Background="{DynamicResource AppBackgroundBrush}"
+                                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="8,4"
+                                                        VerticalAlignment="Center"
+                                                        Visibility="{Binding DomainSecurityTxtData.HasExpires, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="EXPIRES: " FontSize="9" FontWeight="Bold" Foreground="#64748B" />
+                                                        <TextBlock Text="{Binding DomainSecurityTxtData.Expires}" FontFamily="JetBrains Mono" FontSize="10" Foreground="#CBD5E1" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Row 1: Action Link Buttons -->
+                                            <WrapPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal">
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding DomainSecurityTxtData.PolicyUrl}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="30"
+                                                        Padding="10,0"
+                                                        Margin="0,0,8,6"
+                                                        Visibility="{Binding DomainSecurityTxtData.HasBugBounty, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="ShieldCheckmark24" FontSize="13" Foreground="#00E599" Margin="0,0,6,0" />
+                                                        <TextBlock Text="Bug Bounty Policy" FontSize="11" FontWeight="Bold" Foreground="#00E599" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding DomainSecurityTxtData.AcknowledgmentsUrl}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="30"
+                                                        Padding="10,0"
+                                                        Margin="0,0,8,6"
+                                                        Visibility="{Binding DomainSecurityTxtData.HasAcknowledgments, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Trophy24" FontSize="13" Foreground="#FFB800" Margin="0,0,6,0" />
+                                                        <TextBlock Text="Hall of Fame" FontSize="11" FontWeight="Bold" Foreground="#FFB800" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding DomainSecurityTxtData.HiringUrl}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="30"
+                                                        Padding="10,0"
+                                                        Margin="0,0,8,6"
+                                                        Visibility="{Binding DomainSecurityTxtData.HasHiring, Converter={StaticResource BoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Briefcase24" FontSize="13" Foreground="#00D2FF" Margin="0,0,6,0" />
+                                                        <TextBlock Text="Careers / Hiring" FontSize="11" FontWeight="Bold" Foreground="#00D2FF" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Command="{Binding OpenUrlCommand}"
+                                                        CommandParameter="{Binding DomainSecurityTxtData.Url}"
+                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                        Height="30"
+                                                        Padding="10,0"
+                                                        Margin="0,0,8,6">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Document24" FontSize="13" Foreground="#94A3B8" Margin="0,0,6,0" />
+                                                        <TextBlock Text="View security.txt" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
+
+                                            <!-- Row 2: Discovered Security Emails -->
+                                            <ItemsControl Grid.Row="2"
+                                                          ItemsSource="{Binding DomainSecurityTxtData.SecurityEmails}"
+                                                          Visibility="{Binding DomainSecurityTxtData.HasEmails, Converter={StaticResource BoolToVis}}"
+                                                          Margin="0,4,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{DynamicResource AppBackgroundBrush}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="8,4"
+                                                                Margin="0,0,8,6">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <ui:SymbolIcon Symbol="Mail24" FontSize="12" Foreground="#00D2FF" Margin="0,0,6,0" />
+                                                                <TextBlock Text="{Binding}"
+                                                                           FontFamily="JetBrains Mono"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="#F8FAFC"
+                                                                           Margin="0,0,8,0" />
+                                                                <Button Command="{Binding DataContext.PivotSearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                                        Height="22"
+                                                                        Padding="6,0"
+                                                                        ToolTip="Pivot поиск по этой почте">
+                                                                    <TextBlock Text="Pivot" FontSize="9" FontWeight="Bold" Foreground="#00D2FF" />
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- USERNAME: GITHUB PUBLIC SSH KEYS & DEVICES CARD -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsUsernameSshKeys, Converter={StaticResource BoolToVis}}"
+                                                Margin="0,4,0,4">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 0: Header with Username & Key count badge -->
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0"
+                                                        Width="40" Height="40"
+                                                        CornerRadius="10"
+                                                        Background="#2000E599"
+                                                        BorderBrush="#00E599"
+                                                        BorderThickness="1"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="Key24"
+                                                                   FontSize="20"
+                                                                   Foreground="#00E599"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="GitHub Public SSH Keys &amp; Devices"
+                                                                   FontSize="14"
+                                                                   FontWeight="Black"
+                                                                   Foreground="#F0F6FC"
+                                                                   VerticalAlignment="Center" />
+                                                        <Border Background="#2000E599"
+                                                                BorderBrush="#4D00E599"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="8,2"
+                                                                Margin="10,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="SSH ARTIFACTS"
+                                                                       FontFamily="JetBrains Mono"
+                                                                       FontSize="10"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#00E599" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding UsernameSshKeysData.Username}"
+                                                               FontFamily="JetBrains Mono"
+                                                               FontSize="12"
+                                                               Foreground="#8957E5"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+
+                                                <Border Grid.Column="2"
+                                                        Background="{DynamicResource AppBackgroundBrush}"
+                                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        Padding="8,4"
+                                                        VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="KEYS: " FontSize="9" FontWeight="Bold" Foreground="#64748B" />
+                                                        <TextBlock Text="{Binding UsernameSshKeysData.KeyCount}" FontFamily="JetBrains Mono" FontSize="11" FontWeight="Bold" Foreground="#00E599" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Row 1: Keys List -->
+                                            <ItemsControl Grid.Row="1"
+                                                          ItemsSource="{Binding UsernameSshKeysData.Keys}"
+                                                          Margin="0,10,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{DynamicResource AppBackgroundBrush}"
+                                                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="10,6"
+                                                                Margin="0,0,0,6">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <Border Grid.Column="0"
+                                                                        Background="#2000D2FF"
+                                                                        BorderBrush="#4D00D2FF"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4"
+                                                                        Padding="6,2"
+                                                                        Margin="0,0,10,0"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding KeyType}" FontFamily="JetBrains Mono" FontSize="10" FontWeight="Bold" Foreground="#00D2FF" />
+                                                                </Border>
+
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding FingerprintSha256}"
+                                                                           FontFamily="JetBrains Mono"
+                                                                           FontSize="11"
+                                                                           Foreground="#CBD5E1"
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis" />
+
+                                                                <Button Grid.Column="2"
+                                                                        Command="{Binding DataContext.CopyValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding FingerprintSha256}"
+                                                                        Style="{StaticResource CyberGhostButtonStyle}"
+                                                                        Height="24"
+                                                                        Padding="6,0"
+                                                                        ToolTip="Скопировать Fingerprint">
+                                                                    <ui:SymbolIcon Symbol="Copy24" FontSize="11" Foreground="#94A3B8" />
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- Row 2: Discovered Artifacts (Emails & Hostnames) -->
+                                            <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                                <!-- Extracted Emails -->
+                                                <ItemsControl ItemsSource="{Binding UsernameSshKeysData.DiscoveredEmails}"
+                                                              Visibility="{Binding UsernameSshKeysData.HasEmails, Converter={StaticResource BoolToVis}}"
+                                                              Margin="0,0,0,4">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1A00E599"
+                                                                    BorderBrush="#4D00E599"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    Padding="8,4"
+                                                                    Margin="0,0,8,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="Mail24" FontSize="12" Foreground="#00E599" Margin="0,0,6,0" />
+                                                                    <TextBlock Text="{Binding}"
+                                                                               FontFamily="JetBrains Mono"
+                                                                               FontSize="11"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="#F8FAFC"
+                                                                               Margin="0,0,8,0" />
+                                                                    <Button Command="{Binding DataContext.PivotSearchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            Style="{StaticResource CyberGhostButtonStyle}"
+                                                                            Height="22"
+                                                                            Padding="6,0"
+                                                                            ToolTip="Pivot поиск по извлеченной почте">
+                                                                        <TextBlock Text="Pivot" FontSize="9" FontWeight="Bold" Foreground="#00E599" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <!-- Extracted Hostnames / Devices -->
+                                                <ItemsControl ItemsSource="{Binding UsernameSshKeysData.DiscoveredHostnames}"
+                                                              Visibility="{Binding UsernameSshKeysData.HasHostnames, Converter={StaticResource BoolToVis}}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1A818CF8"
+                                                                    BorderBrush="#4D818CF8"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    Padding="8,4"
+                                                                    Margin="0,0,8,6">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="Desktop24" FontSize="12" Foreground="#818CF8" Margin="0,0,6,0" />
+                                                                    <TextBlock Text="{Binding}"
+                                                                               FontFamily="JetBrains Mono"
+                                                                               FontSize="11"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="#F8FAFC" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                     <StackPanel Grid.Row="1"
                                                 Margin="0,4,0,4">
                                         <StackPanel.Style>
@@ -2406,6 +2907,9 @@
                                                             <Condition Binding="{Binding IsEmailFinding}" Value="False" />
                                                             <Condition Binding="{Binding IsUsernameFinding}" Value="False" />
                                                             <Condition Binding="{Binding IsIpFinding}" Value="False" />
+                                                            <Condition Binding="{Binding IsDomainDmarc}" Value="False" />
+                                                            <Condition Binding="{Binding IsDomainSecurityTxt}" Value="False" />
+                                                            <Condition Binding="{Binding IsUsernameSshKeys}" Value="False" />
                                                         </MultiDataTrigger.Conditions>
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </MultiDataTrigger>
