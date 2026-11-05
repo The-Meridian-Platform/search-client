@@ -13,8 +13,8 @@
         WindowCornerPreference="Round"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
-        Height="540" Width="920"
-        MinHeight="480" MinWidth="800"
+        Height="540" Width="980"
+        MinHeight="480" MinWidth="880"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
