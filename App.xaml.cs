@@ -79,6 +79,7 @@ public partial class App : Application
         services.AddSingleton<IMeridianStreamClient, MeridianStreamClient>();
 
         // ViewModels
+        services.AddSingleton<WelcomeViewModel>();
         services.AddSingleton<SearchViewModel>();
         services.AddSingleton<GraphViewModel>();
         services.AddSingleton<HistoryViewModel>();

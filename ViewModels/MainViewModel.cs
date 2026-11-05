@@ -6,6 +6,7 @@ namespace MeridianClient.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
+    public WelcomeViewModel Welcome { get; }
     public SearchViewModel Search { get; }
     public GraphViewModel Graph { get; }
     public HistoryViewModel History { get; }
@@ -17,16 +18,19 @@ public partial class MainViewModel : ObservableObject
     private ObservableObject _currentViewModel;
 
     [ObservableProperty]
-    private string _currentTab = "Search"; // Search, Graph, History, Logs, Settings
+    private string _currentTab = "Welcome";
 
     public MainViewModel(
+        WelcomeViewModel welcomeViewModel,
         SearchViewModel searchViewModel,
         GraphViewModel graphViewModel,
         HistoryViewModel historyViewModel,
         LogsViewModel logsViewModel,
         SettingsViewModel settingsViewModel,
-        IHealthCheckService healthCheckService)
+        IHealthCheckService healthCheckService,
+        ISettingsService settingsService)
     {
+        Welcome = welcomeViewModel;
         Search = searchViewModel;
         Graph = graphViewModel;
         History = historyViewModel;
@@ -34,7 +38,16 @@ public partial class MainViewModel : ObservableObject
         Settings = settingsViewModel;
         Health = healthCheckService;
 
-        _currentViewModel = Search;
+        _currentViewModel = settingsService.Settings.ShowWelcomeScreenOnStartup ? Welcome : Search;
+        _currentTab = settingsService.Settings.ShowWelcomeScreenOnStartup ? "Welcome" : "Search";
+
+        Welcome.NavigateToSearchRequested += () => NavigateTo("Search");
+        Welcome.NavigateToGraphRequested += () => NavigateTo("Graph");
+        Welcome.OpenInvestigationRequested += inv =>
+        {
+            Graph.SelectedInvestigation = inv;
+            NavigateTo("Graph");
+        };
 
         History.SessionDetailsLoaded += session =>
         {
@@ -57,15 +70,20 @@ public partial class MainViewModel : ObservableObject
         CurrentTab = destination;
         CurrentViewModel = destination switch
         {
+            "Welcome" => Welcome,
             "Search" => Search,
             "Graph" => Graph,
             "History" => History,
             "Logs" => Logs,
             "Settings" => Settings,
-            _ => Search
+            _ => Welcome
         };
 
-        if (destination == "History")
+        if (destination == "Welcome")
+        {
+            Welcome.RefreshRecentInvestigations();
+        }
+        else if (destination == "History")
         {
             _ = History.LoadHistoryAsync();
         }

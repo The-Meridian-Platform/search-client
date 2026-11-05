@@ -1329,6 +1329,11 @@ public partial class GraphViewModel : ObservableObject
                         PivotFindingsCount++;
                         UpdateCounts();
                         _physics.WakeUp();
+
+                        if (CurrentInvestigation != null)
+                        {
+                            _investigationService.Save(CurrentInvestigation);
+                        }
                     });
                 }
             }
@@ -1479,6 +1484,8 @@ public partial class GraphViewModel : ObservableObject
         if (updated || !_investigationService.GetAll().Any(i => i.Id == CurrentInvestigation.Id))
         {
             _investigationService.Save(CurrentInvestigation);
+            _settingsService.Settings.LastActiveInvestigationId = CurrentInvestigation.Id;
+            _settingsService.SaveSettings(_settingsService.Settings);
             ReloadAvailableInvestigations();
         }
     }

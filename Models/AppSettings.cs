@@ -13,4 +13,6 @@ public class AppSettings
     public string CustomAccentColor { get; set; } = "#00D2FF";
     public bool EnableToasts { get; set; } = true;
     public bool MergeSharedGraphEntities { get; set; } = false;
+    public bool ShowWelcomeScreenOnStartup { get; set; } = true;
+    public string? LastActiveInvestigationId { get; set; }
 }
