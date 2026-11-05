@@ -137,29 +137,6 @@
                         </Grid>
                     </Border>
                 </Button>
-
-                <!-- 3. Go To Graph -->
-                <Button Command="{Binding GoToLiveGraphCommand}"
-                        Padding="0" Background="Transparent" BorderThickness="0"
-                        HorizontalContentAlignment="Stretch" Margin="0,0,0,12">
-                    <Border Style="{StaticResource WelcomeActionCardStyle}">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="42" Height="42" CornerRadius="8" Background="#2000E599" Margin="0,0,14,0">
-                                <ui:SymbolIcon Symbol="Eye24" FontSize="20" Foreground="#00E599" />
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Интерактивный граф" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                <TextBlock Text="Переход на текущий холст визуализации" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
-                            </StackPanel>
-                            <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-                        </Grid>
-                    </Border>
-                </Button>
             </StackPanel>
 
             <!-- RIGHT COLUMN: RECENT INVESTIGATIONS (AUTO-SAVED) -->
