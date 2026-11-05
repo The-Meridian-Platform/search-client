@@ -40,8 +40,8 @@ public partial class MainViewModel : ObservableObject
         Settings = settingsViewModel;
         Health = healthCheckService;
 
-        _currentViewModel = settingsService.Settings.ShowWelcomeScreenOnStartup ? Welcome : Search;
-        _currentTab = settingsService.Settings.ShowWelcomeScreenOnStartup ? "Welcome" : "Search";
+        _currentViewModel = Search;
+        _currentTab = "Search";
 
         Welcome.NavigateToSearchRequested += () => NavigateTo("Search");
         Welcome.NavigateToGraphRequested += () => NavigateTo("Graph");

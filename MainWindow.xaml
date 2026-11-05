@@ -332,18 +332,6 @@
 
                     <!-- NAVIGATION BUTTONS -->
                     <StackPanel Grid.Row="1">
-                        <!-- Welcome / Home Tab Button -->
-                        <RadioButton Height="44"
-                                     IsChecked="{Binding CurrentTab, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Welcome, Mode=OneWay}"
-                                     Command="{Binding NavigateToCommand}"
-                                     CommandParameter="Welcome"
-                                     Style="{StaticResource CyberNavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="Home24" Margin="0,0,12,0" FontSize="18" Foreground="{DynamicResource AccentBrush}" />
-                                <TextBlock Text="{DynamicResource Nav_Welcome}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </RadioButton>
-
                         <!-- Search Tab Button -->
                         <RadioButton Height="44"
                                      IsChecked="{Binding CurrentTab, Converter={StaticResource StringEqualsToBool}, ConverterParameter=Search, Mode=OneWay}"
