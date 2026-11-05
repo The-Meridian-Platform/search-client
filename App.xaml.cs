@@ -54,9 +54,56 @@ public partial class App : Application
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             MainWindow = mainWindow;
-            mainWindow.Show();
-            mainWindow.Activate();
-            mainWindow.Focus();
+
+            if (settingsService.Settings.ShowWelcomeScreenOnStartup)
+            {
+                var welcomeVm = _serviceProvider.GetRequiredService<WelcomeViewModel>();
+                var welcomeWindow = _serviceProvider.GetRequiredService<Views.WelcomeWindow>();
+
+                void OnOpenInvestigation(Models.InvestigationModel inv)
+                {
+                    welcomeWindow.Close();
+                    mainWindow.Show();
+                    mainWindow.Activate();
+                    mainWindow.Focus();
+                }
+
+                void OnNavigate()
+                {
+                    welcomeWindow.Close();
+                    mainWindow.Show();
+                    mainWindow.Activate();
+                    mainWindow.Focus();
+                }
+
+                welcomeVm.OpenInvestigationRequested += OnOpenInvestigation;
+                welcomeVm.NavigateToSearchRequested += OnNavigate;
+                welcomeVm.NavigateToGraphRequested += OnNavigate;
+
+                welcomeWindow.Closed += (s, args) =>
+                {
+                    welcomeVm.OpenInvestigationRequested -= OnOpenInvestigation;
+                    welcomeVm.NavigateToSearchRequested -= OnNavigate;
+                    welcomeVm.NavigateToGraphRequested -= OnNavigate;
+
+                    if (!mainWindow.IsVisible)
+                    {
+                        mainWindow.Show();
+                        mainWindow.Activate();
+                        mainWindow.Focus();
+                    }
+                };
+
+                welcomeWindow.Show();
+                welcomeWindow.Activate();
+                welcomeWindow.Focus();
+            }
+            else
+            {
+                mainWindow.Show();
+                mainWindow.Activate();
+                mainWindow.Focus();
+            }
         }
         catch (Exception ex)
         {
@@ -80,6 +127,7 @@ public partial class App : Application
 
         // ViewModels
         services.AddSingleton<WelcomeViewModel>();
+        services.AddTransient<Views.WelcomeWindow>();
         services.AddSingleton<SearchViewModel>();
         services.AddSingleton<GraphViewModel>();
         services.AddSingleton<HistoryViewModel>();

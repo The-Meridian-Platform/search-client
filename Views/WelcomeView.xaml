@@ -17,7 +17,8 @@
             <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="18" />
+            <Setter Property="Padding" Value="18,16" />
+            <Setter Property="Height" Value="82" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -96,18 +97,18 @@
                         Padding="0" Background="Transparent" BorderThickness="0"
                         HorizontalContentAlignment="Stretch" Margin="0,0,0,12">
                     <Border Style="{StaticResource WelcomeActionCardStyle}">
-                        <Grid>
+                        <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="8" Background="{DynamicResource SubtleAccentBrush}" Margin="0,0,14,0">
+                            <Border Grid.Column="0" Width="42" Height="42" CornerRadius="8" Background="{DynamicResource SubtleAccentBrush}" Margin="0,0,14,0">
                                 <ui:SymbolIcon Symbol="Add24" FontSize="20" Foreground="{DynamicResource AccentBrush}" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Новое расследование" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                <TextBlock Text="Запуск OSINT-поиска по домену, IP или никнейму" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0" />
+                                <TextBlock Text="Запуск OSINT-поиска по домену, IP или никнейму" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
                             </StackPanel>
                             <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
                         </Grid>
@@ -119,18 +120,18 @@
                         Padding="0" Background="Transparent" BorderThickness="0"
                         HorizontalContentAlignment="Stretch" Margin="0,0,0,12">
                     <Border Style="{StaticResource WelcomeActionCardStyle}">
-                        <Grid>
+                        <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="8" Background="#2061AFEF" Margin="0,0,14,0">
+                            <Border Grid.Column="0" Width="42" Height="42" CornerRadius="8" Background="#2061AFEF" Margin="0,0,14,0">
                                 <ui:SymbolIcon Symbol="FolderOpen24" FontSize="20" Foreground="#61AFEF" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Открыть из файла" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                <TextBlock Text="Импорт сохраненного расследования (.json)" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0" />
+                                <TextBlock Text="Импорт сохраненного расследования (.json)" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
                             </StackPanel>
                             <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
                         </Grid>
@@ -142,18 +143,18 @@
                         Padding="0" Background="Transparent" BorderThickness="0"
                         HorizontalContentAlignment="Stretch" Margin="0,0,0,12">
                     <Border Style="{StaticResource WelcomeActionCardStyle}">
-                        <Grid>
+                        <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="8" Background="#2000E599" Margin="0,0,14,0">
+                            <Border Grid.Column="0" Width="42" Height="42" CornerRadius="8" Background="#2000E599" Margin="0,0,14,0">
                                 <ui:SymbolIcon Symbol="Eye24" FontSize="20" Foreground="#00E599" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Интерактивный граф" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                <TextBlock Text="Переход на текущий холст визуализации" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0" />
+                                <TextBlock Text="Переход на текущий холст визуализации" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,3,0,0" />
                             </StackPanel>
                             <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
                         </Grid>

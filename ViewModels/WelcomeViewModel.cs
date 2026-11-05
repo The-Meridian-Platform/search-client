@@ -34,6 +34,12 @@ public partial class WelcomeViewModel : ObservableObject
     [ObservableProperty]
     private bool _autoOpenLastSession;
 
+    partial void OnAutoOpenLastSessionChanged(bool value)
+    {
+        _settingsService.Settings.ShowWelcomeScreenOnStartup = value;
+        _settingsService.SaveSettings(_settingsService.Settings);
+    }
+
     public WelcomeViewModel(
         IInvestigationService investigationService,
         ILogService logService,
