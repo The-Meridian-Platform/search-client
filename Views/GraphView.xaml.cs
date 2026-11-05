@@ -843,22 +843,35 @@ public partial class GraphView : UserControl
 
                 foreach (var node in visibleNodes)
                 {
-                    var center = new Point(node.X, node.Y);
-                    var nodeBorderPen = new Pen(new SolidColorBrush(node.AccentColor), node.Type == GraphNodeType.Target ? 2.5 : 1.5);
-                    ctx.DrawEllipse(cardBrush, nodeBorderPen, center, node.Radius, node.Radius);
+                    if (_nodeVisuals.TryGetValue(node, out var visualElement))
+                    {
+                        var visualBrush = new VisualBrush(visualElement)
+                        {
+                            Stretch = Stretch.None
+                        };
+                        double left = node.X - NodeContainerWidth / 2.0;
+                        double top = node.Y - node.Radius;
+                        ctx.DrawRectangle(visualBrush, null, new Rect(left, top, NodeContainerWidth, visualElement.RenderSize.Height > 0 ? visualElement.RenderSize.Height : 70));
+                    }
+                    else
+                    {
+                        var center = new Point(node.X, node.Y);
+                        var nodeBorderPen = new Pen(new SolidColorBrush(node.AccentColor), node.Type == GraphNodeType.Target ? 2.5 : 1.5);
+                        ctx.DrawEllipse(cardBrush, nodeBorderPen, center, node.Radius, node.Radius);
 
-                    var ft = new FormattedText(
-                        node.Label,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        FlowDirection.LeftToRight,
-                        font,
-                        node.Type == GraphNodeType.Target ? 12 : 10,
-                        primaryTextBrush,
-                        VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                        var ft = new FormattedText(
+                            node.Label,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            FlowDirection.LeftToRight,
+                            font,
+                            node.Type == GraphNodeType.Target ? 12 : 10,
+                            primaryTextBrush,
+                            VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-                    double textX = node.X - ft.Width / 2.0;
-                    double textY = node.Y + node.Radius + 4;
-                    ctx.DrawText(ft, new Point(textX, textY));
+                        double textX = node.X - ft.Width / 2.0;
+                        double textY = node.Y + node.Radius + 4;
+                        ctx.DrawText(ft, new Point(textX, textY));
+                    }
                 }
 
                 ctx.Pop();
